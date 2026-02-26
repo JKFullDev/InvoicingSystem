@@ -1,7 +1,9 @@
 ﻿using InvoicingSystem.Client.Interfaces;
 using InvoicingSystem.Server.Data.Models;
+using InvoicingSystem.Server.Data.Models.DTOs;
 using Microsoft.AspNetCore.Components;
 using Radzen;
+using Radzen.Blazor;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,17 +12,18 @@ namespace InvoicingSystem.Client.Pages
 {
     public partial class CustomerList : ComponentBase
     {
-        // Inyección de dependencias como propiedades
-        [Inject]
-        protected ICustomersService CustomersService { get; set; } = default!;
+        [Inject] protected ICustomersService CustomersService { get; set; } = default!;
 
-        [Inject]
-        protected NavigationManager NavigationManager { get; set; } = default!;
-
-        // Variables de estado protegidas para que la vista (.razor) pueda acceder a ellas
+        // Variables de la tabla
+        protected RadzenDataGrid<Customers> grid = default!;
         protected IEnumerable<Customers>? customers;
         protected int count;
         protected bool isLoading = false;
+
+        // Variables del formulario Maestro-Detalle
+        protected bool showForm = false;
+        protected bool isNew = false;
+        protected Customers customerToEdit = new Customers();
 
         protected override async Task OnInitializedAsync()
         {
@@ -32,26 +35,14 @@ namespace InvoicingSystem.Client.Pages
             isLoading = true;
             try
             {
-                var query = new Query()
-                {
-                    Filter = args.Filter,
-                    OrderBy = args.OrderBy,
-                    Skip = args.Skip,
-                    Top = args.Top
-                };
-
+                var query = new Query { Filter = args.Filter, OrderBy = args.OrderBy, Skip = args.Skip, Top = args.Top };
                 var result = await CustomersService.GetCustomers(query);
 
                 if (result != null)
                 {
                     customers = result.Value;
-
                     count = result.Count;
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error cargando datos: {ex.Message}");
             }
             finally
             {
@@ -61,20 +52,67 @@ namespace InvoicingSystem.Client.Pages
 
         protected void GoToAdd()
         {
-            NavigationManager.NavigateTo("/customers/add");
+            isNew = true;
+            customerToEdit = new Customers(); // Vaciamos el formulario
+            showForm = true;
         }
 
         protected void OnRowDoubleClick(DataGridRowMouseEventArgs<Customers> args)
         {
-            if (args.Data != null && args.Data.CustomerId != null)
+            // Barrera de seguridad (quita el CS8602)
+            if (args.Data == null) return;
+
+            isNew = false;
+
+            // Clonamos asegurando que si algún campo es null, se ponga como cadena vacía
+            customerToEdit = new Customers
             {
-                GoToEdit(args.Data.CustomerId);
-            }
+                CustomerId = args.Data.CustomerId ?? "",
+                Name = args.Data.Name ?? "",
+                Nif = args.Data.Nif ?? "",
+                City = args.Data.City ?? "",
+                Address = args.Data.Address ?? ""
+            };
+
+            showForm = true;
         }
 
-        protected void GoToEdit(string customerId)
+        protected void CancelEdit()
         {
-            NavigationManager.NavigateTo($"/customers/edit/{customerId}");
+            showForm = false;
+        }
+
+        protected async Task SaveCustomer()
+        {
+            try
+            {
+                // Mapeamos a tu DTO para enviarlo al servidor
+                var dto = new CustomersDTO
+                {
+                    CustomerId = customerToEdit.CustomerId,
+                    Name = customerToEdit.Name,
+                    Nif = customerToEdit.Nif,
+                    City = customerToEdit.City,
+                    Address = customerToEdit.Address
+                };
+
+                if (isNew)
+                {
+                    await CustomersService.CreateCustomers(dto);
+                }
+                else
+                {
+                    // Usamos tu método ReplaceCustomers (PUT)
+                    await CustomersService.ReplaceCustomers(customerToEdit.CustomerId, dto);
+                }
+
+                showForm = false;
+                await grid.Reload(); // Esto lanza LoadData automáticamente y refresca la vista
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al guardar: {ex.Message}");
+            }
         }
 
         protected async Task DeleteCustomer(string customerId)
@@ -82,18 +120,9 @@ namespace InvoicingSystem.Client.Pages
             try
             {
                 var response = await CustomersService.DeleteCustomers(customerId);
-
                 if (response.IsSuccessStatusCode)
                 {
-                    var query = new Query { Top = 10, Skip = 0 };
-                    var result = await CustomersService.GetCustomers(query);
-
-                    if (result != null)
-                    {
-                        customers = result.Value;
-
-                        count = result.Count;
-                    }
+                    await grid.Reload();
                 }
             }
             catch (Exception ex)

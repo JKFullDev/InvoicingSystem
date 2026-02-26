@@ -18,7 +18,7 @@ builder.Services.AddDbContext<InvoicingSystemDbContext>(options =>
 // 2. CONFIGURAR ODATA (Faltaba toda esta parte para que las rutas /odata funcionen)
 builder.Services.AddControllers()
     .AddOData(options => options
-        .Select().Filter().OrderBy().Expand().Count()
+        .Select().Filter().OrderBy().Expand().Count().SetMaxTop(null)
         .AddRouteComponents("odata/InvoicingSystem", GetEdmModel()));
 
 builder.Services.AddRazorComponents()

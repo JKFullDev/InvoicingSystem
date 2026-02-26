@@ -11,13 +11,54 @@
         <h1>Directorio de Clientes</h1>
     </div>
     <div class="col-md-6 text-end">
-        <RadzenButton Text="Añadir Cliente" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" Click="@GoToAdd" />
+        <RadzenButton Text="Añadir Cliente" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" Click="@GoToAdd" Disabled="@showForm" />
     </div>
 </div>
 
+@* FORMULARIO DESPLEGABLE (Añadir/Editar) *@
+@if (showForm && customerToEdit != null)
+{
+    <RadzenCard Class="mb-4" Style="border-left: 5px solid #1151f3;">
+        <h3 class="mb-3">@(isNew ? "Nuevo Cliente" : "Editar Cliente")</h3>
+        <RadzenTemplateForm Data="@customerToEdit" Submit="@SaveCustomer" TItem="Customers">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <RadzenLabel Text="ID Cliente" />
+                    <RadzenTextBox @bind-Value="customerToEdit.CustomerId" Disabled="@(!isNew)" class="w-100" />
+                </div>
+                <div class="col-md-9">
+                    <RadzenLabel Text="Nombre" />
+                    <RadzenTextBox @bind-Value="customerToEdit.Name" class="w-100" />
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <RadzenLabel Text="NIF/CIF" />
+                    <RadzenTextBox @bind-Value="customerToEdit.Nif" class="w-100" />
+                </div>
+                <div class="col-md-4">
+                    <RadzenLabel Text="Ciudad" />
+                    <RadzenTextBox @bind-Value="customerToEdit.City" class="w-100" />
+                </div>
+                <div class="col-md-4">
+                    <RadzenLabel Text="Dirección" />
+                    <RadzenTextBox @bind-Value="customerToEdit.Address" class="w-100" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 text-end">
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" Icon="save" ButtonStyle="ButtonStyle.Success" />
+                    <RadzenButton Text="Cancelar" Icon="cancel" ButtonStyle="ButtonStyle.Light" Click="@CancelEdit" class="ms-2" />
+                </div>
+            </div>
+        </RadzenTemplateForm>
+    </RadzenCard>
+}
+
+@* TABLA PRINCIPAL *@
 <div class="row">
     <div class="col-md-12">
-        <RadzenDataGrid Data="@customers" Count="@count" TItem="Customers" LoadData="@LoadData"
+        <RadzenDataGrid @ref="grid" Data="@customers" Count="@count" TItem="Customers" LoadData="@LoadData"
                         AllowFiltering="true" AllowPaging="true" AllowSorting="true" PageSize="10"
                         IsLoading="@isLoading" RowDoubleClick="@OnRowDoubleClick">
             <Columns>
@@ -27,10 +68,10 @@
                 <RadzenDataGridColumn TItem="Customers" Property="City" Title="Ciudad" Width="200px" />
                 <RadzenDataGridColumn TItem="Customers" Property="Address" Title="Dirección" />
 
-                <RadzenDataGridColumn TItem="Customers" Context="customer" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="120px">
+                @* Columna solo para el botón de borrar *@
+                <RadzenDataGridColumn TItem="Customers" Context="customer" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="80px">
                     <Template Context="customer">
-                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(() => GoToEdit(customer.CustomerId))" @onclick:stopPropagation="true" />
-                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(() => DeleteCustomer(customer.CustomerId))" @onclick:stopPropagation="true" class="ms-1" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(() => DeleteCustomer(customer.CustomerId))" @onclick:stopPropagation="true" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
