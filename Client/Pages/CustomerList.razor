@@ -1,0 +1,135 @@
+﻿@page "/customers"
+@using InvoicingSystem.Server.Data.Models
+@using InvoicingSystem.Client.Interfaces
+@using Radzen
+@using Radzen.Blazor
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@* Inyectamos las herramientas que necesitamos *@
+@inject ICustomersService CustomersService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Listado de Clientes</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1>Directorio de Clientes</h1>
+    </div>
+    <div class="col-md-6 text-end">
+        @* Botón para añadir un nuevo cliente *@
+        <RadzenButton Text="Añadir Cliente" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" Click="@GoToAdd" />
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        @* RadzenDataGrid: 
+            - AllowFiltering, AllowPaging, AllowSorting activan la interactividad.
+            - RowDoubleClick captura el doble clic en una fila para editar.
+        *@
+        <RadzenDataGrid Data="@customers" Count="@count" TItem="Customers" LoadData="@LoadData"
+                        AllowFiltering="true" AllowPaging="true" AllowSorting="true" PageSize="10"
+                        IsLoading="@isLoading" RowDoubleClick="@OnRowDoubleClick">
+            <Columns>
+                <RadzenDataGridColumn TItem="Customers" Property="CustomerId" Title="ID Cliente" Width="150px" />
+                <RadzenDataGridColumn TItem="Customers" Property="Name" Title="Nombre" />
+                <RadzenDataGridColumn TItem="Customers" Property="Nif" Title="NIF/CIF" Width="150px" />
+                <RadzenDataGridColumn TItem="Customers" Property="City" Title="Ciudad" Width="200px" />
+                <RadzenDataGridColumn TItem="Customers" Property="Address" Title="Dirección" />
+
+                @* Columna para botones de acción directa (opcional, pero muy útil) *@
+                <RadzenDataGridColumn TItem="Customers" Context="customer" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="120px">
+                    <Template Context="customer">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(() => GoToEdit(customer.CustomerId))" @onclick:stopPropagation="true" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(() => DeleteCustomer(customer.CustomerId))" @onclick:stopPropagation="true" class="ms-1" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+@code {
+    // Variables para almacenar el estado de la tabla
+    IEnumerable<Customers> customers;
+    int count;
+    bool isLoading = false;
+
+    // Se ejecuta la primera vez que la página carga
+    protected override async Task OnInitializedAsync()
+    {
+        // En Radzen, al usar el evento LoadData en el Grid,
+        // a veces no hace falta cargar aquí, pero es buena práctica para la primera vista
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // Método que llama OData automáticamente cuando filtras, ordenas o cambias de página
+    async Task LoadData(LoadDataArgs args)
+    {
+        isLoading = true;
+
+        try
+        {
+            // Radzen transforma los filtros de la tabla en un objeto Query de OData
+            var query = new Query()
+            {
+                Filter = args.Filter,
+                OrderBy = args.OrderBy,
+                Skip = args.Skip,
+                Top = args.Top
+            };
+
+            var result = await CustomersService.GetCustomers(query);
+            customers = result.Value; // Los datos de la página actual
+            count = result.Count;     // El total de registros en base de datos (para la paginación)
+        }
+        catch (Exception ex)
+        {
+            // Aquí en Hard2Bit usaríais NotificationService de Radzen para mostrar el error
+            Console.WriteLine($"Error cargando datos: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // Navegación a la página de creación
+    void GoToAdd()
+    {
+        NavigationManager.NavigateTo("/customers/add");
+    }
+
+    // Navegación a la página de edición al hacer doble clic
+    void OnRowDoubleClick(DataGridRowMouseEventArgs<Customers> args)
+    {
+        GoToEdit(args.Data.CustomerId);
+    }
+
+    // Navegación a la página de edición desde el botón
+    void GoToEdit(string customerId)
+    {
+        NavigationManager.NavigateTo($"/customers/edit/{customerId}");
+    }
+
+    // Lógica para borrar un cliente directamente desde la tabla
+    async Task DeleteCustomer(string customerId)
+    {
+        // NOTA: Para producción, aquí deberías meter un modal de confirmación
+        try
+        {
+            var response = await CustomersService.DeleteCustomers(customerId);
+            if (response.IsSuccessStatusCode)
+            {
+                // Refrescamos la tabla recargando los datos
+                var query = new Query { Top = 10, Skip = 0 };
+                var result = await CustomersService.GetCustomers(query);
+                customers = result.Value;
+                count = result.Count;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al borrar: {ex.Message}");
+        }
+    }
+}

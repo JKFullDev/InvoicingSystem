@@ -1,0 +1,18 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+
+namespace InvoicingSystem.Server.Data.Models
+{
+    public class TaxRates
+    {
+        [Key]
+        public Guid TaxRateId { get; set; }
+
+        [Required]
+        public string Name { get; set; }
+
+        [Required]
+        public decimal Percentage { get; set; }
+
+    }
+}
