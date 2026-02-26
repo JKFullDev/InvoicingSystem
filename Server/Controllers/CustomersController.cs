@@ -7,10 +7,14 @@ using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Results;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Radzen;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using System.Net;
 
 namespace InvoicingSystem.Server.Controllers
 {
@@ -18,7 +22,7 @@ namespace InvoicingSystem.Server.Controllers
     [Route("odata/InvoicingSystem/Customers")]
     public partial class CustomersController : ODataController
     {
-        private readonly InvoicingSystemDbContext context;
+        private readonly InvoicingSystem.Server.Data.InvoicingSystemDbContext context;
 
         // Inyectamos el DbContext 
         public CustomersController(InvoicingSystemDbContext context)
@@ -40,7 +44,7 @@ namespace InvoicingSystem.Server.Controllers
 
         #region GET(1)
         // --- 2. OBTENER UNO POR ID (Para editar con doble click en este caso)
-        [HttpGet("{CustomerId}")]
+        [HttpGet("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
         public SingleResult<Customers> GetCustomers(string key)
         {
@@ -53,7 +57,7 @@ namespace InvoicingSystem.Server.Controllers
 
         #region DELETE(1)
         // --- 3. BORRAR UNO POR ID
-        [HttpDelete("{CustomerId}")]
+        [HttpDelete("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
         public IActionResult DeleteCustomers(string key)
         {
             try
@@ -79,7 +83,7 @@ namespace InvoicingSystem.Server.Controllers
 
         #region PUT
         // --- 4. ACTUALIZAR TODO (PUT)
-        [HttpPut("{CustomerId}")]
+        [HttpPut("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
         public IActionResult PutCustomers(string key, [FromBody]CustomersDTO itemDto)
         {
@@ -118,7 +122,7 @@ namespace InvoicingSystem.Server.Controllers
         #region PATCH
 
         // --- 5. ACTUALIZAR PARCIAL
-        [HttpPatch("{CustomerId}")]
+        [HttpPatch("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
         public IActionResult PatchCustomers(string key, [FromBody]Delta<Customers> patch)
         {
