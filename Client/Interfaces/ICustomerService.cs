@@ -9,10 +9,10 @@ namespace InvoicingSystem.Client.Interfaces
     public interface ICustomersService
     {
         // GET (Listado)
-        Task<ODataServiceResult<Customers>> GetCustomers(Query query);
+        Task<ODataServiceResult<Customers>?> GetCustomers(Query query);
 
         // POST (Crear enviando DTO)
-        Task<Customers> CreateCustomers(CustomersDTO customerDto);
+        Task<Customers?> CreateCustomers(CustomersDTO customerDto);
 
         // PATCH (Actualizar enviando Entidad)
         Task<HttpResponseMessage> UpdateCustomers(string CustomerId, Customers customer);

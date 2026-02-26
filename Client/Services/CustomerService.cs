@@ -19,7 +19,7 @@ namespace InvoicingSystem.Client.Services
         }
 
         #region GET
-        public async Task<Radzen.ODataServiceResult<Customers>> GetCustomers(Query query)
+        public async Task<Radzen.ODataServiceResult<Customers>?> GetCustomers(Query query)
         {
             var uri = new Uri(baseUri, "Customers");
             uri = Radzen.ODataExtensions.GetODataUri(uri: uri, filter: $"{query.Filter}", top: query.Top, skip: query.Skip, orderby: $"{query.OrderBy}", count: query.Top != null && query.Skip != null);
@@ -32,7 +32,7 @@ namespace InvoicingSystem.Client.Services
         #endregion
 
         #region POST
-        public async Task<Customers> CreateCustomers(CustomersDTO customerDto)
+        public async Task<Customers?> CreateCustomers(CustomersDTO customerDto)
         {
             var uri = new Uri(baseUri, "Customers");
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, uri)

@@ -7,22 +7,18 @@ using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Results;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Radzen;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Net;
 
 namespace InvoicingSystem.Server.Controllers
 {
     // La ruta base de OData. Tiene que coincidir con lo que pongamos en Program.cs
-    [Route("/odata/InvoicingSystem/Customers")]
+    [Route("odata/InvoicingSystem/Customers")]
     public partial class CustomersController : ODataController
     {
-        private readonly InvoicingSystem.Server.Data.InvoicingSystemDbContext context;
+        private readonly InvoicingSystemDbContext context;
 
         // Inyectamos el DbContext 
         public CustomersController(InvoicingSystemDbContext context)
@@ -34,19 +30,19 @@ namespace InvoicingSystem.Server.Controllers
         // --- 1. LISTAR TODOS (GET) - Soporta filtros de OData como $filter, $orderby, etc.
         [HttpGet]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
-        public IEnumerable<InvoicingSystem.Server.Data.Models.Customers> GetCustomers()
+        public IEnumerable<Customers> GetCustomers()
         {
             // AsNoTracking() hace que EF no "vigile" los objetos para que el listado vaya más rápido
-            var items = this.context.Customers.AsNoTracking().AsQueryable<InvoicingSystem.Server.Data.Models.Customers>();
+            var items = this.context.Customers.AsNoTracking().AsQueryable();
             return items;
         }
         #endregion
 
         #region GET(1)
         // --- 2. OBTENER UNO POR ID (Para editar con doble click en este caso)
-        [HttpGet("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
+        [HttpGet("{CustomerId}")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
-        public SingleResult<InvoicingSystem.Server.Data.Models.Customers> GetCustomers(string key)
+        public SingleResult<Customers> GetCustomers(string key)
         {
             var items = this.context.Customers.AsNoTracking().Where(i => i.CustomerId == key);
             var result = SingleResult.Create(items);
@@ -57,7 +53,7 @@ namespace InvoicingSystem.Server.Controllers
 
         #region DELETE(1)
         // --- 3. BORRAR UNO POR ID
-        [HttpDelete("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
+        [HttpDelete("{CustomerId}")]
         public IActionResult DeleteCustomers(string key)
         {
             try
@@ -83,7 +79,7 @@ namespace InvoicingSystem.Server.Controllers
 
         #region PUT
         // --- 4. ACTUALIZAR TODO (PUT)
-        [HttpPut("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
+        [HttpPut("{CustomerId}")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
         public IActionResult PutCustomers(string key, [FromBody]CustomersDTO itemDto)
         {
@@ -122,7 +118,7 @@ namespace InvoicingSystem.Server.Controllers
         #region PATCH
 
         // --- 5. ACTUALIZAR PARCIAL
-        [HttpPatch("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
+        [HttpPatch("{CustomerId}")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
         public IActionResult PatchCustomers(string key, [FromBody]Delta<Customers> patch)
         {
