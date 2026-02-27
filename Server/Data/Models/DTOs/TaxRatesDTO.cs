@@ -9,7 +9,7 @@ namespace InvoicingSystem.Server.Data.Models.DTOs
         public Guid TaxRateId { get; set; }
 
         [Required]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [Required]
         public decimal Percentage { get; set; }

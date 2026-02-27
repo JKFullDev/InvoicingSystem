@@ -16,7 +16,8 @@ namespace InvoicingSystem.Client.Interfaces
 
         // PATCH (Actualizar enviando Entidad)
         Task<HttpResponseMessage> UpdateCustomers(string CustomerId, Customers customer);
-        // PUT (Reemplazar enviando DTO) - ¡Esta era la línea que faltaba!
+
+        // PUT (Reemplazar enviando DTO) 
         Task<HttpResponseMessage> ReplaceCustomers(string CustomerId, CustomersDTO customerDto);
 
         // DELETE (Borrar)

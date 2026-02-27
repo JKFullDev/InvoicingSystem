@@ -9,6 +9,10 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 builder.Services.AddRadzenComponents();
 builder.Services.AddScoped<ICustomersService, CustomersService>();
+builder.Services.AddScoped<IPaymentTermsService, PaymentTermsService>();
+builder.Services.AddScoped<IProductsService, ProductsService>();
+builder.Services.AddScoped<ITaxRatesService, TaxRatesService>();
+builder.Services.AddScoped<ISalesInvoiceLinesService, SalesInvoiceLinesService>();
 builder.Services.AddRadzenCookieThemeService(options =>
 {
     options.Name = "InvoicingSystemTheme";

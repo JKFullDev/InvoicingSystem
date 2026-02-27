@@ -1,0 +1,325 @@
+﻿@page "/tax-rates"
+@using InvoicingSystem.Server.Data.Models
+@using Radzen
+@using Radzen.Blazor
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<PageTitle>Listado de Impuestos</PageTitle>
+
+<style>
+    /* Overlay de fondo semi-transparente */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    /* Contenedor del formulario modal */
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        max-width: 600px;
+        width: 90%;
+        max-height: 85vh;
+        overflow-y: auto;
+        animation: slideDown 0.3s ease-in-out;
+    }
+
+    /* Animación de aparición del overlay */
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* Animación de deslizamiento del modal */
+    @@keyframes slideDown {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Espaciado interno del modal */
+    .modal-body {
+        padding: 2.5rem;
+    }
+
+    /* Estilo para el header del modal */
+    .modal-header {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px 12px 0 0;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: white;
+    }
+
+    /* Botón de cerrar (X) */
+    .modal-close {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: white;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+
+    /* Contenedor centrado para los campos del formulario */
+    .form-field-container {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    /* Estilo para los labels */
+    .form-field-container .rz-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    /* Espaciado entre campos */
+    .form-field {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Estilo para los inputs */
+    .form-field-container .rz-textbox,
+    .form-field-container .rz-numeric {
+        width: 100% !important;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        transition: border-color 0.2s;
+    }
+
+    .form-field-container .rz-textbox:focus,
+    .form-field-container .rz-numeric:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Estilo para el texto de ayuda */
+    .help-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    /* Separador visual */
+    .form-divider {
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        margin: 2rem 0;
+    }
+
+    /* Header de la página */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .page-header h1 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    /* Validación de error */
+    .rz-message {
+        margin-top: 0.25rem;
+    }
+
+    /* Alerta de taxRateo facturado */
+    .invoiced-warning {
+        background-color: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 6px;
+        display: flex;
+        align-items: start;
+        gap: 0.75rem;
+    }
+
+    .invoiced-warning-icon {
+        color: #f59e0b;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .invoiced-warning-content h4 {
+        margin: 0 0 0.25rem 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #92400e;
+    }
+
+    .invoiced-warning-content p {
+        margin: 0;
+        font-size: 0.875rem;
+        color: #78350f;
+        line-height: 1.5;
+    }
+</style>
+
+<div class="page-header">
+    <h1>Directorio de Impuestos</h1>
+    <RadzenButton Text="Añadir Impuesto" 
+                  Icon="add_circle_outline" 
+                  ButtonStyle="ButtonStyle.Primary" 
+                  Click="@GoToAdd" 
+                  Disabled="@showForm" 
+                  Size="ButtonSize.Large" />
+</div>
+
+@* FORMULARIO DESPLEGABLE (Añadir/Editar) - MODAL OVERLAY *@
+@if (showForm && taxRateToEdit != null)
+{
+    <div class="modal-overlay" @onclick="@CancelEdit">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@(isNew ? "Nuevo Impuesto" : "Editar Impuesto")</h3>
+                <button class="modal-close" @onclick="@CancelEdit" aria-label="Cerrar">
+                    ✕
+                </button>
+            </div>
+            <div class="modal-body">
+                <RadzenTemplateForm Data="@taxRateToEdit" Submit="@SaveTaxRate" TItem="TaxRates">
+                    <div class="form-field-container">
+
+                        @* Muestro advertencia si el taxRate está en facturas *@
+                        @if (!isNew && isTaxRateInvoiced)
+                        {
+                            <div class="invoiced-warning">
+                                <span class="invoiced-warning-icon">⚠️</span>
+                                <div class="invoiced-warning-content">
+                                    <h4>Impuesto</h4>
+                                    <p>
+                                        Este Impuesto aparece en <strong>@invoiceCount factura@(invoiceCount > 1 ? "s" : "")</strong>.
+                                        Puedes modificar su precio actual, pero las facturas existentes conservarán el precio original.
+                                    </p>
+                                </div>
+                            </div>
+                        }
+
+                        @* Campo ID no se muestra porque es Guid generado automáticamente *@
+
+                        @* Campo Nombre *@
+                        <div class="form-field">
+                            <RadzenLabel Text="Nombre *" />
+                            <RadzenTextBox @bind-Value="taxRateToEdit.Name" 
+                                          Name="Name" 
+                                          Placeholder="Ej: IVA 4%, IVA Exento..." 
+                                          MaxLength="200" />
+                            <RadzenRequiredValidator Component="Name" 
+                                                    Text="El nombre es obligatorio" 
+                                                    Style="display: block" />
+                        </div>
+                        @* Campo Porcentaje *@
+                        <div class="form-field">
+                            <RadzenLabel Text="Porcentaje (%) *" />
+                            <RadzenNumeric @bind-Value="taxRateToEdit.Percentage" 
+                                           Name="Percentage"
+                                           ShowUpDown="false"
+                                           Min="0"
+                                           Max="200"
+                                           Placeholder="10%" />
+                            <RadzenRequiredValidator Component="Percentage" 
+                                                    Text="La porcentaje es obligatoria" 
+                                                    Style="display: block" />
+                        </div>
+
+                       
+
+                        <hr class="form-divider" />
+
+                        @* Botones de acción *@
+                        <div class="d-flex justify-content-end gap-2">
+                            <RadzenButton Text="Cancelar" 
+                                        ButtonStyle="ButtonStyle.Light" 
+                                        Click="@CancelEdit" 
+                                        Size="ButtonSize.Medium" 
+                                        Style="min-width: 100px;" />
+                            <RadzenButton Text="Guardar" 
+                                        ButtonType="ButtonType.Submit" 
+                                        ButtonStyle="ButtonStyle.Primary" 
+                                        Icon="save" 
+                                        Size="ButtonSize.Medium" 
+                                        Style="min-width: 100px;" />
+                        </div>
+                    </div>
+                </RadzenTemplateForm>
+            </div>
+        </div>
+    </div>
+}
+
+@* TABLA PRINCIPAL *@
+<div class="row">
+    <div class="col-md-12">
+        <RadzenDataGrid @ref="grid" Data="@taxRates" Count="@count" TItem="TaxRates" LoadData="@LoadData"
+                        AllowFiltering="true" AllowPaging="true" AllowSorting="true" PageSize="10"
+                        IsLoading="@isLoading" RowDoubleClick="@OnRowDoubleClick">
+            <Columns>
+                <RadzenDataGridColumn TItem="TaxRates" Property="Name" Title="Nombre" Width="45%" />
+                @* Columna de precio con formato usando Template *@
+                <RadzenDataGridColumn TItem="TaxRates" Property="Percentage" Title="Porcentaje" Width="45%">
+                    <Template Context="taxRate">
+                        @((int)taxRate.Percentage) %
+                    </Template>
+                </RadzenDataGridColumn>
+
+                @* Columna solo para el botón de borrar *@
+                <RadzenDataGridColumn TItem="TaxRates" Context="taxRate" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="10%">
+                    <Template Context="taxRate">
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(() => DeleteTaxRate(taxRate.TaxRateId))" @onclick:stopPropagation="true" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>

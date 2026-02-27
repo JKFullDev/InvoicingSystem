@@ -8,10 +8,10 @@ namespace InvoicingSystem.Server.Data.Models
         public Guid ProductId { get; set; }
 
         [Required]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [Required]
-        public string Description { get; set; }
+        public required string Description { get; set; }
 
         [Required]
         public decimal CurrentPrice { get; set; }

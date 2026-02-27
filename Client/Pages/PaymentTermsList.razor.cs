@@ -10,21 +10,21 @@ using System.Threading.Tasks;
 
 namespace InvoicingSystem.Client.Pages
 {
-    public partial class CustomerList : ComponentBase
+    public partial class PaymentTermsList : ComponentBase
     {
-        [Inject] protected ICustomersService CustomersService { get; set; } = default!;
+        [Inject] protected IPaymentTermsService PaymentTermsService { get; set; } = default!;
         [Inject] protected NotificationService NotificationService { get; set; } = default!;
 
         // Variables de la tabla
-        protected RadzenDataGrid<Customers> grid = default!;
-        protected IEnumerable<Customers>? customers;
+        protected RadzenDataGrid<PaymentTerms> grid = default!;
+        protected IEnumerable<PaymentTerms>? paymentTerms;
         protected int count;
         protected bool isLoading = false;
 
         // Variables del formulario Maestro-Detalle
         protected bool showForm = false;
         protected bool isNew = false;
-        protected Customers customerToEdit = new Customers();
+        protected PaymentTerms paymentTermsToEdit = new PaymentTerms { Description = "" };
 
         protected override async Task OnInitializedAsync()
         {
@@ -37,11 +37,11 @@ namespace InvoicingSystem.Client.Pages
             try
             {
                 var query = new Query { Filter = args.Filter, OrderBy = args.OrderBy, Skip = args.Skip, Top = args.Top };
-                var result = await CustomersService.GetCustomers(query);
+                var result = await PaymentTermsService.GetPaymentTerms(query);
 
                 if (result != null)
                 {
-                    customers = result.Value;
+                    paymentTerms = result.Value;
                     count = result.Count;
                 }
             }
@@ -54,24 +54,22 @@ namespace InvoicingSystem.Client.Pages
         protected void GoToAdd()
         {
             isNew = true;
-            customerToEdit = new Customers(); // Vaciamos el formulario
+            paymentTermsToEdit = new PaymentTerms { Description = "" }; // Vaciamos el formulario
             showForm = true;
         }
 
-        protected void OnRowDoubleClick(DataGridRowMouseEventArgs<Customers> args)
+        protected void OnRowDoubleClick(DataGridRowMouseEventArgs<PaymentTerms> args)
         {
             if (args.Data == null) return;
 
             isNew = false;
 
             // Clonamos asegurando que si algún campo es null, se ponga como cadena vacía
-            customerToEdit = new Customers
+            paymentTermsToEdit = new PaymentTerms
             {
-                CustomerId = args.Data.CustomerId ?? "",
-                Name = args.Data.Name ?? "",
-                Nif = args.Data.Nif ?? "",
-                City = args.Data.City ?? "",
-                Address = args.Data.Address ?? ""
+                PaymentTermsId = args.Data.PaymentTermsId,
+                Description = args.Data.Description ?? "",
+                PaymentDays = args.Data.PaymentDays
             };
 
             showForm = true;
@@ -82,28 +80,26 @@ namespace InvoicingSystem.Client.Pages
             showForm = false;
         }
 
-        protected async Task SaveCustomer(Customers item)
+        protected async Task SavePaymentTerms()
         {
             try
             {
                 // Mapeamos a tu DTO para enviarlo al servidor
-                var dto = new CustomersDTO
+                var dto = new PaymentTermsDTO
                 {
-                    CustomerId = item.CustomerId,
-                    Name = item.Name,
-                    Nif = item.Nif,
-                    City = item.City,
-                    Address = item.Address
+                    PaymentTermsId = paymentTermsToEdit.PaymentTermsId,
+                    Description = paymentTermsToEdit.Description,
+                    PaymentDays = paymentTermsToEdit.PaymentDays,
                 };
 
                 if (isNew)
                 {
-                    await CustomersService.CreateCustomers(dto);
+                    await PaymentTermsService.CreatePaymentTerms(dto);
                 }
                 else
                 {
-                    // Usamos tu método ReplaceCustomers (PUT)
-                    await CustomersService.ReplaceCustomers(item.CustomerId, dto);
+                    // Usamos tu método ReplacePaymentTerms (PUT)
+                    await PaymentTermsService.ReplacePaymentTerms(paymentTermsToEdit.PaymentTermsId, dto);
                 }
 
                 showForm = false;
@@ -115,11 +111,11 @@ namespace InvoicingSystem.Client.Pages
             }
         }
 
-        protected async Task DeleteCustomer(string customerId)
+        protected async Task DeletePaymentTerms(Guid paymentTermsId)
         {
             try
             {
-                var response = await CustomersService.DeleteCustomers(customerId);
+                var response = await PaymentTermsService.DeletePaymentTerms(paymentTermsId);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -127,7 +123,7 @@ namespace InvoicingSystem.Client.Pages
                     {
                         Severity = NotificationSeverity.Success,
                         Summary = "Éxito",
-                        Detail = "Cliente eliminado correctamente",
+                        Detail = "Término de pago eliminado correctamente",
                         Duration = 4000
                     });
                     await grid.Reload();
@@ -138,7 +134,7 @@ namespace InvoicingSystem.Client.Pages
                     {
                         Severity = NotificationSeverity.Error,
                         Summary = "No se puede eliminar",
-                        Detail = "No se puede eliminar este cliente porque tiene facturas asociadas.",
+                        Detail = "No se puede eliminar este término de pago porque está siendo utilizado en una o más facturas.",
                         Duration = 6000
                     });
                 }
@@ -148,7 +144,7 @@ namespace InvoicingSystem.Client.Pages
                     {
                         Severity = NotificationSeverity.Warning,
                         Summary = "No encontrado",
-                        Detail = "El cliente no existe",
+                        Detail = "El término de pago no existe",
                         Duration = 4000
                     });
                 }
@@ -158,7 +154,7 @@ namespace InvoicingSystem.Client.Pages
                     {
                         Severity = NotificationSeverity.Error,
                         Summary = "Error",
-                        Detail = "Error al eliminar el cliente",
+                        Detail = "Error al eliminar el término de pago",
                         Duration = 4000
                     });
                 }

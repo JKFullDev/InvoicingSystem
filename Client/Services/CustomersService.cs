@@ -59,7 +59,6 @@ namespace InvoicingSystem.Client.Services
         #endregion
 
         #region PUT
-        // Si en algún momento usáis PUT en vez de PATCH, este va con el DTO
         public async Task<HttpResponseMessage> ReplaceCustomers(string CustomerId, CustomersDTO customerDto)
         {
             var uri = new Uri(baseUri, $"Customers('{CustomerId}')");

@@ -24,6 +24,10 @@ builder.Services.AddControllers()
 builder.Services.AddRazorComponents()
       .AddInteractiveWebAssemblyComponents();
 builder.Services.AddScoped<ICustomersService, CustomersService>();
+builder.Services.AddScoped<IPaymentTermsService, PaymentTermsService>();
+builder.Services.AddScoped<IProductsService, ProductsService>();
+builder.Services.AddScoped<ITaxRatesService, TaxRatesService>();
+builder.Services.AddScoped<ISalesInvoiceLinesService, SalesInvoiceLinesService>();
 builder.Services.AddRadzenComponents();
 builder.Services.AddRadzenCookieThemeService(options =>
 {
@@ -64,6 +68,10 @@ static IEdmModel GetEdmModel()
     var builder = new ODataConventionModelBuilder();
     // Este nombre "Customers" debe coincidir con el del Controller
     builder.EntitySet<Customers>("Customers");
+    builder.EntitySet<PaymentTerms>("PaymentTerms");
+    builder.EntitySet<Products>("Products");
+    builder.EntitySet<TaxRates>("TaxRates");
+    builder.EntitySet<SalesInvoiceLines>("SalesInvoiceLines");
     // Añade aquí el resto de tablas cuando crees sus controllers (Products, etc.)
     return builder.GetEdmModel();
 }

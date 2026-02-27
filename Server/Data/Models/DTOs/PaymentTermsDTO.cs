@@ -8,7 +8,7 @@ namespace InvoicingSystem.Server.Data.Models.DTOs
         public Guid PaymentTermsId { get; set; }
 
         [Required]
-        public string Description { get; set; }
+        public required string Description { get; set; }
 
         [Required]
         public int PaymentDays { get; set; }

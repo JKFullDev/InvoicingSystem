@@ -19,13 +19,13 @@ using System.Net;
 namespace InvoicingSystem.Server.Controllers
 {
     // La ruta base de OData. Tiene que coincidir con lo que pongamos en Program.cs
-    [Route("odata/InvoicingSystem/Customers")]
-    public partial class CustomersController : ODataController
+    [Route("odata/InvoicingSystem/SalesInvoiceHeaders")]
+    public partial class SalesInvoiceHeadersController : ODataController
     {
-        private readonly InvoicingSystem.Server.Data.InvoicingSystemDbContext context;
+        private readonly InvoicingSystemDbContext context;
 
         // Inyectamos el DbContext 
-        public CustomersController(InvoicingSystemDbContext context)
+        public SalesInvoiceHeadersController(InvoicingSystemDbContext context)
         {
             this.context = context;
         }
@@ -34,21 +34,21 @@ namespace InvoicingSystem.Server.Controllers
         // --- 1. LISTAR TODOS (GET) - Soporta filtros de OData como $filter, $orderby, etc.
         [HttpGet]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
-        public IEnumerable<Customers> GetCustomers()
+        public IEnumerable<SalesInvoiceHeaders> GetSalesInvoiceHeaders()
         {
             // AsNoTracking() hace que EF no "vigile" los objetos para que el listado vaya más rápido
-            var items = this.context.Customers.AsNoTracking().AsQueryable();
+            var items = this.context.SalesInvoiceHeaders.AsNoTracking().AsQueryable();
             return items;
         }
         #endregion
 
         #region GET(1)
         // --- 2. OBTENER UNO POR ID (Para editar con doble click en este caso)
-        [HttpGet("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
+        [HttpGet("/odata/InvoicingSystem/SalesInvoiceHeaders({key})")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
-        public SingleResult<Customers> GetCustomers(string key)
+        public SingleResult<SalesInvoiceHeaders> GetSalesInvoiceHeaders(string key)
         {
-            var items = this.context.Customers.AsNoTracking().Where(i => i.CustomerId == key);
+            var items = this.context.SalesInvoiceHeaders.AsNoTracking().Where(i => i.SalesInvoiceHeaderId == key);
             var result = SingleResult.Create(items);
 
             return result;
@@ -57,18 +57,18 @@ namespace InvoicingSystem.Server.Controllers
 
         #region DELETE(1)
         // --- 3. BORRAR UNO POR ID
-        [HttpDelete("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
-        public IActionResult DeleteCustomers(string key)
+        [HttpDelete("/odata/InvoicingSystem/SalesInvoiceHeaders({key})")]
+        public IActionResult DeleteSalesInvoiceHeaders(string key)
         {
             try
             {
                 if (!ModelState.IsValid) return BadRequest(ModelState); // Si el modelo llega mal formado, se termina
 
-                var item = this.context.Customers.Where(i => i.CustomerId == key).FirstOrDefault();
+                var item = this.context.SalesInvoiceHeaders.Where(i => i.SalesInvoiceHeaderId == key).FirstOrDefault();
 
-                if (item == null) return NotFound("El cliente no existe");  //Si no existe el cliente, fuera
+                if (item == null) return NotFound("El impuesto no existe");  //Si no existe, fuera
 
-                this.context.Customers.Remove(item);
+                this.context.SalesInvoiceHeaders.Remove(item);
                 this.context.SaveChanges();
 
                 return new NoContentResult(); // 204 No Content (Todo ok pero no devuelvo nada)
@@ -76,7 +76,8 @@ namespace InvoicingSystem.Server.Controllers
             catch (DbUpdateException ex) when (ex.InnerException is SqlException sqlEx && (sqlEx.Number == 547 || sqlEx.Number == 2601 || sqlEx.Number == 2627))
             {
                 // Error 547: Restricción de clave foránea
-                return Conflict(new { message = "No se puede eliminar este cliente porque tiene facturas asociadas." });
+                // Error 2601/2627: Violación de índice único
+                return Conflict(new { message = "No se puede eliminar este impuesto porque está siendo utilizado en una o más facturas." });
             }
             catch(Exception ex)
             {
@@ -88,31 +89,34 @@ namespace InvoicingSystem.Server.Controllers
 
         #region PUT
         // --- 4. ACTUALIZAR TODO (PUT)
-        [HttpPut("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
+        // Permito editar productos facturados porque CurrentPrice es independiente de UnitPrice en facturas      [HttpPut("/odata/InvoicingSystem/SalesInvoiceHeaders({key})")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
-        public IActionResult PutCustomers(string key, [FromBody]CustomersDTO itemDto)
+        public IActionResult PutSalesInvoiceHeaders(string key, [FromBody]SalesInvoiceHeadersDTO itemDto)
         {
             try
             {
                 if (!ModelState.IsValid) return BadRequest(ModelState);
 
                 // Compruebo que el ID de la URL coincida con el del objeto
-                if (itemDto == null || (itemDto.CustomerId != key)) return BadRequest();
+                if (itemDto == null || (itemDto.SalesInvoiceHeaderId != key)) return BadRequest();
 
-                var entityToUpdate = this.context.Customers.FirstOrDefault(i => i.CustomerId == key);
+                var entityToUpdate = this.context.SalesInvoiceHeaders.FirstOrDefault(i => i.SalesInvoiceHeaderId == key);
                 if (entityToUpdate == null) return NotFound();
 
                 // Mapeo Manual: Volcar datos del DTO a la Entidad
-                entityToUpdate.Name = itemDto.Name;
-                entityToUpdate.Address = itemDto.Address;
-                entityToUpdate.City = itemDto.City;
-                entityToUpdate.Nif = itemDto.Nif;
+                entityToUpdate.SalesInvoiceHeaderId = itemDto.SalesInvoiceHeaderId;
+                entityToUpdate.CustomerReference = itemDto.CustomerReference;
+                entityToUpdate.InvoiceDate = itemDto.InvoiceDate;
+                entityToUpdate.DueDate = itemDto.DueDate;
+                entityToUpdate.QuoteReference = itemDto.QuoteReference;
+                entityToUpdate.CustomerId = itemDto.CustomerId;
+                entityToUpdate.PaymentTermsId = itemDto.PaymentTermsId;
 
 
-                this.context.Customers.Update(entityToUpdate);
+                this.context.SalesInvoiceHeaders.Update(entityToUpdate);
                 this.context.SaveChanges();
 
-                var itemToReturn = this.context.Customers.Where(i => i.CustomerId == key);
+                var itemToReturn = this.context.SalesInvoiceHeaders.Where(i => i.SalesInvoiceHeaderId == key);
                 return new ObjectResult(SingleResult.Create(itemToReturn));
             }
             catch(Exception ex)
@@ -127,23 +131,23 @@ namespace InvoicingSystem.Server.Controllers
         #region PATCH
 
         // --- 5. ACTUALIZAR PARCIAL
-        [HttpPatch("/odata/InvoicingSystem/Customers(CustomerId={CustomerId})")]
+        [HttpPatch("/odata/InvoicingSystem/SalesInvoiceHeaders({key})")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
-        public IActionResult PatchCustomers(string key, [FromBody]Delta<Customers> patch)
+        public IActionResult PatchSalesInvoiceHeaders(string key, [FromBody]Delta<SalesInvoiceHeaders> patch)
         {
             try
             {
                 if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                var entityToUpdate = this.context.Customers.Where(i => i.CustomerId == key).FirstOrDefault();
+                var entityToUpdate = this.context.SalesInvoiceHeaders.Where(i => i.SalesInvoiceHeaderId == key).FirstOrDefault();
 
                 if (entityToUpdate == null) return BadRequest();
                  
                 patch.Patch(entityToUpdate);
-                this.context.Customers.Update(entityToUpdate);
+                this.context.SalesInvoiceHeaders.Update(entityToUpdate);
                 this.context.SaveChanges();
 
-                var itemToReturn = this.context.Customers.Where(i => i.CustomerId == key);
+                var itemToReturn = this.context.SalesInvoiceHeaders.Where(i => i.SalesInvoiceHeaderId == key);
                 return new ObjectResult(SingleResult.Create(itemToReturn));
             }
             catch(Exception ex)
@@ -159,7 +163,7 @@ namespace InvoicingSystem.Server.Controllers
         // --- 6. CREAR (POST)
         [HttpPost]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
-        public IActionResult Post([FromBody] CustomersDTO itemDto)
+        public IActionResult Post([FromBody] SalesInvoiceHeadersDTO itemDto)
         {
             try
             {
@@ -167,20 +171,26 @@ namespace InvoicingSystem.Server.Controllers
                 if (itemDto == null) return BadRequest();
 
                 // MAPEO MANUAL: Creo una entidad nueva a partir de los datos del DTO
-                var newEntity = new Customers
+                var newEntity = new SalesInvoiceHeaders
                 {
+
+                    SalesInvoiceHeaderId = itemDto.SalesInvoiceHeaderId,
+                    CustomerReference = itemDto.CustomerReference,
+                    InvoiceDate = itemDto.InvoiceDate,
+                    DueDate = itemDto.DueDate,
+                    QuoteReference = itemDto.QuoteReference,
+                    Customer = null!,
                     CustomerId = itemDto.CustomerId,
-                    Name = itemDto.Name,
-                    Address = itemDto.Address,
-                    City = itemDto.City,
-                    Nif = itemDto.Nif
+                    PaymentTermsId = itemDto.PaymentTermsId,
+                    PaymentTerms = null!
+
                 };
 
 
-                this.context.Customers.Add(newEntity);
+                this.context.SalesInvoiceHeaders.Add(newEntity);
                 this.context.SaveChanges();
 
-                var itemToReturn = this.context.Customers.Where(i => i.CustomerId == newEntity.CustomerId);
+                var itemToReturn = this.context.SalesInvoiceHeaders.Where(i => i.SalesInvoiceHeaderId == newEntity.SalesInvoiceHeaderId);
 
                 // Devuelvo 201 Created con el objeto nuevo
                 return new ObjectResult(SingleResult.Create(itemToReturn))
@@ -192,6 +202,26 @@ namespace InvoicingSystem.Server.Controllers
             {
                 ModelState.AddModelError("", ex.Message);
                 return BadRequest(ModelState);
+            }
+        }
+        #endregion
+
+        #region VERIFICACIÓN DE ENTIDAD EN FACTURAS
+        // Compruebo si ya está en alguna factura
+        [HttpGet("/odata/InvoicingSystem/SalesInvoiceHeaders({key})/IsInvoiced")]
+        public IActionResult IsSalesInvoiceHeaderInvoiced(string key)
+        {
+            try
+            {
+                // Cuento cuántas líneas de factura usan esta entidad
+                var invoiceCount = this.context.SalesInvoiceHeaders
+                    .Count(line => line.SalesInvoiceHeaderId == key);
+
+                return Ok(new { isInvoiced = invoiceCount > 0, invoiceCount = invoiceCount });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
         #endregion

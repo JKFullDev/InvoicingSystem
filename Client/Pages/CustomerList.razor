@@ -6,53 +6,281 @@
 
 <PageTitle>Listado de Clientes</PageTitle>
 
-<div class="row mb-4">
-    <div class="col-md-6">
-        <h1>Directorio de Clientes</h1>
-    </div>
-    <div class="col-md-6 text-end">
-        <RadzenButton Text="Añadir Cliente" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" Click="@GoToAdd" Disabled="@showForm" />
-    </div>
+<style>
+    /* Overlay de fondo semi-transparente */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    /* Contenedor del formulario modal */
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        max-width: 600px;
+        width: 90%;
+        max-height: 85vh;
+        overflow-y: auto;
+        animation: slideDown 0.3s ease-in-out;
+    }
+
+    /* Animación de aparición del overlay */
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* Animación de deslizamiento del modal */
+    @@keyframes slideDown {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Espaciado interno del modal */
+    .modal-body {
+        padding: 2.5rem;
+    }
+
+    /* Estilo para el header del modal */
+    .modal-header {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px 12px 0 0;
+    }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: white;
+        }
+
+    /* Botón de cerrar (X) */
+    .modal-close {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: white;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+
+        .modal-close:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+    /* Contenedor centrado para los campos del formulario */
+    .form-field-container {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+        /* Estilo para los labels */
+        .form-field-container .rz-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+    /* Espaciado entre campos */
+    .form-field {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Estilo para los inputs */
+    .form-field-container .rz-textbox,
+    .form-field-container .rz-numeric {
+        width: 100% !important;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        transition: border-color 0.2s;
+    }
+
+        .form-field-container .rz-textbox:focus,
+        .form-field-container .rz-numeric:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+    /* Estilo para el texto de ayuda */
+    .help-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    /* Separador visual */
+    .form-divider {
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        margin: 2rem 0;
+    }
+
+    /* Header de la página */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+    /* Validación de error */
+    .rz-message {
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="page-header">
+    <h1>Directorio de Clientes</h1>
+    <RadzenButton Text="Añadir cliente"
+                  Icon="add_circle_outline"
+                  ButtonStyle="ButtonStyle.Primary"
+                  Click="@GoToAdd"
+                  Disabled="@showForm"
+                  Size="ButtonSize.Large" />
 </div>
 
-@* FORMULARIO DESPLEGABLE (Añadir/Editar) *@
+@* FORMULARIO DESPLEGABLE (Añadir/Editar) - MODAL OVERLAY *@
 @if (showForm && customerToEdit != null)
 {
-    <RadzenCard Class="mb-4" Style="border-left: 5px solid #1151f3;">
-        <h3 class="mb-3">@(isNew ? "Nuevo Cliente" : "Editar Cliente")</h3>
-        <RadzenTemplateForm Data="@customerToEdit" Submit="@SaveCustomer" TItem="Customers">
-            <div class="row mb-3">
-                <div class="col-md-3">
-                    <RadzenLabel Text="ID Cliente" />
-                    <RadzenTextBox @bind-Value="customerToEdit.CustomerId" Disabled="@(!isNew)" class="w-100" />
-                </div>
-                <div class="col-md-9">
-                    <RadzenLabel Text="Nombre" />
-                    <RadzenTextBox @bind-Value="customerToEdit.Name" class="w-100" />
-                </div>
+    <div class="modal-overlay" @onclick="@CancelEdit">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@(isNew ? "Nuevo Cliente" : "Editar Cliente")</h3>
+                <button class="modal-close" @onclick="@CancelEdit" aria-label="Cerrar">
+                    ✕
+                </button>
             </div>
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <RadzenLabel Text="NIF/CIF" />
-                    <RadzenTextBox @bind-Value="customerToEdit.Nif" class="w-100" />
-                </div>
-                <div class="col-md-4">
-                    <RadzenLabel Text="Ciudad" />
-                    <RadzenTextBox @bind-Value="customerToEdit.City" class="w-100" />
-                </div>
-                <div class="col-md-4">
-                    <RadzenLabel Text="Dirección" />
-                    <RadzenTextBox @bind-Value="customerToEdit.Address" class="w-100" />
-                </div>
+            <div class="modal-body">
+                <RadzenTemplateForm Data="@customerToEdit" Submit="@SaveCustomer" TItem="Customers">
+                    <div class="form-field-container">
+
+                        @* Campo id *@
+                        <div class="form-field">
+                            <RadzenLabel Text="ID Cliente *" />
+                            <RadzenTextBox @bind-Value="customerToEdit.CustomerId"
+                                           Name="CustomerId"
+                                           Placeholder="Ej: CU2002-00..."
+                                           MaxLength="30" />
+                            <RadzenRequiredValidator Component="CustomerId"
+                                                     Text="El ID es obligatorio"
+                                                     Style="display: block" />
+                        </div>
+
+                        @* Campo nombre *@
+                        <div class="form-field">
+                            <RadzenLabel Text="Nombre *" />
+                            <RadzenTextBox @bind-Value="customerToEdit.Name"
+                                           Name="Name"
+                                           Placeholder="Ej: HARDWARE & SOFTWARE SOLUTIO..."
+                                           MaxLength="100" />
+                            <RadzenRequiredValidator Component="Name"
+                                                     Text="El nombre es obligatorio"
+                                                     Style="display: block" />
+                        </div>
+
+
+                        @* Campo NIF *@
+                        <div class="form-field">
+                            <RadzenLabel Text="NIF/CIF *" />
+                            <RadzenTextBox @bind-Value="customerToEdit.Nif"
+                                           Name="Nif"
+                                           Placeholder="Ej:B88776..."
+                                           MaxLength="100" />
+                            <RadzenRequiredValidator Component="Nif"
+                                                     Text="El NIF/CIF es obligatorio"
+                                                     Style="display: block" />
+                        </div>
+                        @* Campo Ciudad *@
+                        <div class="form-field">
+                            <RadzenLabel Text="Ciudad *" />
+                            <RadzenTextBox @bind-Value="customerToEdit.City"
+                                           Name="City"
+                                           Placeholder="Ej: Madrid, Barcelona..."
+                                           MaxLength="200" />
+                            <RadzenRequiredValidator Component="City"
+                                                     Text="La ciudad es obligatoria"
+                                                     Style="display: block" />
+                        </div>
+                        @* Campo Direccion *@
+                        <div class="form-field">
+                            <RadzenLabel Text="Dirección *" />
+                            <RadzenTextBox @bind-Value="customerToEdit.Address"
+                                           Name="Address"
+                                           Placeholder="Ej: Calle Gran Vía 4..."
+                                           MaxLength="300" />
+                            <RadzenRequiredValidator Component="Address"
+                                                     Text="La dirección es obligatoria"
+                                                     Style="display: block" />
+                        </div>
+
+                        <hr class="form-divider" />
+
+                        @* Botones de acción *@
+                        <div class="d-flex justify-content-end gap-2">
+                            <RadzenButton Text="Cancelar"
+                                          ButtonStyle="ButtonStyle.Light"
+                                          Click="@CancelEdit"
+                                          Size="ButtonSize.Medium"
+                                          Style="min-width: 100px;" />
+                            <RadzenButton Text="Guardar"
+                                          ButtonType="ButtonType.Submit"
+                                          ButtonStyle="ButtonStyle.Primary"
+                                          Icon="save"
+                                          Size="ButtonSize.Medium"
+                                          Style="min-width: 100px;" />
+                        </div>
+                    </div>
+                </RadzenTemplateForm>
             </div>
-            <div class="row">
-                <div class="col-md-12 text-end">
-                    <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" Icon="save" ButtonStyle="ButtonStyle.Success" />
-                    <RadzenButton Text="Cancelar" Icon="cancel" ButtonStyle="ButtonStyle.Light" Click="@CancelEdit" class="ms-2" />
-                </div>
-            </div>
-        </RadzenTemplateForm>
-    </RadzenCard>
+        </div>
+    </div>
 }
 
 @* TABLA PRINCIPAL *@
