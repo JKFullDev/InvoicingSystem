@@ -1,0 +1,212 @@
+@page "/sales-invoice-headers"
+@using InvoicingSystem.Server.Data.Models
+@using Radzen
+@using Radzen.Blazor
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<PageTitle>Listado de Facturas</PageTitle>
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+    /* Oculto el texto "items per page" del paginador */
+    .rz-pagesize-text {
+        display: none;
+    }
+
+    /* Animación de deslizamiento desde la derecha */
+    @@keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+        }
+        to {
+            transform: translateX(0);
+        }
+    }
+</style>
+
+<div class="page-header">
+    <h1>Gestión de Facturas</h1>
+
+    <RadzenButton Text="Nueva Factura"
+                  Icon="add_circle_outline"
+                  ButtonStyle="ButtonStyle.Primary"
+                  Click="@GoToAdd"
+                  Size="ButtonSize.Large" />
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <RadzenDataGrid @ref="grid" Data="@salesInvoiceHeaders" Count="@count" TItem="SalesInvoiceHeaders" LoadData="@LoadData"
+                        AllowFiltering="true" AllowPaging="true" AllowSorting="true" 
+                        PageSize="5"
+                        PageSizeOptions="@(new int[] { 5, 10, 20, 50 })"
+                        ShowPagingSummary="true"
+                        PagingSummaryFormat="Mostrando {0}-{1} de {2} facturas"
+                        IsLoading="@isLoading" RowDoubleClick="@OnRowDoubleClick"
+                        Style="max-height:397.6px">
+            <Columns>
+                <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Property="SalesInvoiceHeaderId" Title="ID Factura" Width="140px">
+                    <Template Context="invoice">
+                        @if (string.IsNullOrEmpty(invoice.SalesInvoiceHeaderId))
+                        {
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            @invoice.SalesInvoiceHeaderId
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Property="CustomerReference" Title="Referencia Cliente" Width="200px">
+                    <Template Context="invoice">
+                        @if (string.IsNullOrEmpty(invoice.CustomerReference))
+                        {
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            @invoice.CustomerReference
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Property="InvoiceDate" Title="F. Emisión" Width="120px">
+                    <Template Context="invoice">
+                        @if (invoice.InvoiceDate == DateTime.MinValue)
+                        {
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            <span>@invoice.InvoiceDate.ToString("dd/MM/yyyy")</span>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Property="DueDate" Title="F. Vencimiento" Width="140px">
+                    <Template Context="invoice">
+                        @if (invoice.DueDate == DateTime.MinValue)
+                        {
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            <span>@invoice.DueDate.ToString("dd/MM/yyyy")</span>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Property="QuoteReference" Title="Ref. Presupuesto" Width="160px">
+                    <Template Context="invoice">
+                    @if (string.IsNullOrEmpty(invoice.QuoteReference))
+                    {
+                        <div class="placeholder-glow">
+                            <span class="placeholder col-12"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        @invoice.QuoteReference
+                    }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Property="CustomerId" Title="ID Cliente" Width="140px">
+                    <Template Context="invoice">
+                        @if (string.IsNullOrEmpty(invoice.CustomerId))
+                        {
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            @invoice.CustomerId
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Context="invoice" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="60px" Title="PDF">
+                    <Template Context="invoice">
+
+                        <RadzenButton Icon="picture_as_pdf"
+                                      ButtonStyle="ButtonStyle.Info"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Medium"
+                                      Disabled=@(string.IsNullOrEmpty(invoice.SalesInvoiceHeaderId))
+                                      Click="@(() => DownloadPdf(invoice.SalesInvoiceHeaderId))"
+                                      @onclick:stopPropagation="true"
+                                      title="Descargar PDF" />
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Context="salesInvoiceHeader" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="80px">
+                    <Template Context="invoice">
+                        <RadzenButton Icon="delete"
+                                      ButtonStyle="ButtonStyle.Danger"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Medium"
+                                      Disabled=@(string.IsNullOrEmpty(invoice.SalesInvoiceHeaderId))
+                                      Click="@(() => DeleteSalesInvoiceHeader(invoice.SalesInvoiceHeaderId))"
+                                      @onclick:stopPropagation="true" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+@* Sidebar deslizante desde la derecha para editar/crear facturas *@
+@if (sidebarExpanded)
+{
+    <!-- Overlay oscuro -->
+    <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999;" 
+         @onclick="@(() => CloseSidebar(false))"></div>
+
+    <!-- Panel del sidebar -->
+    <div style="position: fixed; right: 0; top: 0; width: 700px; height: 100vh; background: white; z-index: 1000; 
+                box-shadow: -2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column;
+                animation: slideInRight 0.3s ease-out;">
+
+        <!-- Header del sidebar -->
+        <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600; color: #1f2937;">@sidebarTitle</h2>
+            <RadzenButton Icon="close" 
+                          ButtonStyle="ButtonStyle.Light" 
+                          Variant="Variant.Flat"
+                          Size="ButtonSize.Small"
+                          Click="@(() => CloseSidebar(false))" />
+        </div>
+
+        <!-- Contenido del sidebar -->
+        <div style="flex: 1; overflow-y: auto; padding: 1.5rem;">
+            <SalesInvoiceHeaderEdit IsNew="@isNewInvoice" 
+                                   InvoiceId="@selectedInvoiceId"
+                                   OnClose="@CloseSidebar" />
+        </div>
+    </div>
+}

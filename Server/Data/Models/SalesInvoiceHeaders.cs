@@ -20,14 +20,17 @@ namespace InvoicingSystem.Server.Data.Models
         public required string QuoteReference { get; set; }
 
         [Required]
-        public required string CustomerId { get; set; } //FK  
-        public required Customers Customer { get; set; } // La propiedad de navegación (para hacer .Include(x => x.Customer))
+        public required string CustomerId { get; set; } // FK
 
-        [Required]
-        public Guid PaymentTermsId { get; set; } //FK
-        public required PaymentTerms PaymentTerms { get; set; }
+        // Quito required porque al deserializar desde JSON puede ser null
+        public Customers? Customer { get; set; }
 
-        [Required]
+        // Nullable para floating labels - Validación en cliente con RadzenRequiredValidator
+        public Guid? PaymentTermsId { get; set; } // FK nullable
+
+        // Quito required porque al deserializar desde JSON puede ser null
+        public PaymentTerms? PaymentTerms { get; set; }
+
         // Relación 1-a-N con las líneas
         public List<SalesInvoiceLines> Lines { get; set; } = new();
     }

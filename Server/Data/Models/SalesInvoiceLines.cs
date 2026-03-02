@@ -10,20 +10,18 @@ namespace InvoicingSystem.Server.Data.Models
         [Required]
         public required string SalesInvoiceHeaderId { get; set; }
 
-        [Required]
-        public required SalesInvoiceHeaders SalesInvoiceHeader { get; set; }
+        // Quito required para evitar problemas de deserialización
+        public SalesInvoiceHeaders? SalesInvoiceHeader { get; set; }
 
-        [Required]
-        public Guid ProductId { get; set; } // FK Guid
+        // Nullable para floating labels - Validación en cliente con RadzenRequiredValidator
+        public Guid? ProductId { get; set; } // FK Guid
 
-        [Required]
-        public required Products Product { get; set; }
+        public Products? Product { get; set; }
 
-        [Required]
-        public Guid TaxRateId { get; set; } // FK Guid
+        // Nullable para floating labels - Validación en cliente con RadzenRequiredValidator
+        public Guid? TaxRateId { get; set; } // FK Guid
 
-        [Required]
-        public required TaxRates TaxRate { get; set; }
+        public TaxRates? TaxRate { get; set; }
 
         [Required]
         public decimal UnitPrice { get; set; }
@@ -34,7 +32,7 @@ namespace InvoicingSystem.Server.Data.Models
         [Required]
         public required string CustomDescription { get; set; }
 
+        // Calculo el total de la línea
         public decimal TotalLine => UnitPrice * Quantity;
-
     }
 }

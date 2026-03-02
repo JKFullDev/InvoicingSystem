@@ -1,0 +1,211 @@
+@using InvoicingSystem.Server.Data.Models
+@using InvoicingSystem.Server.Data.Models.DTOs
+@using InvoicingSystem.Client.Interfaces
+@using Radzen
+@using Radzen.Blazor
+@inject ISalesInvoiceHeadersService SalesInvoiceHeadersService
+@inject ICustomersService CustomersService
+@inject IPaymentTermsService PaymentTermsService
+@inject IProductsService ProductsService
+@inject ITaxRatesService TaxRatesService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<PageTitle>@(IsNew ? "Nueva Factura" : "Editar Factura")</PageTitle>
+
+<RadzenStack Gap="1rem">
+    @if (isLoading)
+    {
+        <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+    }
+    else if (invoice != null)
+    {
+        <RadzenTemplateForm Data="@invoice" Submit="@OnSubmit" TItem="SalesInvoiceHeaders">
+            @*PRIMERA FILA*@
+            <RadzenRow Gap="1rem">
+                @* Campo ID Factura *@
+                @if (IsNew)
+                {
+                    <RadzenColumn Size="6">
+                        <RadzenFormField Text="ID Factura" Variant="Variant.Outlined" Style="width:100%">
+                            <RadzenTextBox @bind-Value="invoice.SalesInvoiceHeaderId"
+                                           Name="SalesInvoiceHeaderId"
+                                           Placeholder="Ej: FA2602-2151"
+                                           Style="width: 100%;" />
+                        </RadzenFormField>
+                        <RadzenRequiredValidator Component="SalesInvoiceHeaderId" Text="El ID es obligatorio" />
+                    </RadzenColumn>
+                }
+                else
+                {
+                    <RadzenColumn Size="6">
+                        <RadzenFormField Text="ID Factura" Variant="Variant.Outlined" Style="width:100%">
+                            <RadzenTextBox Value="@invoice.SalesInvoiceHeaderId"
+                                           Disabled="true"
+                                           Style="width: 100%; background-color: #f3f4f6;" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                }
+
+                @* Cliente *@
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Cliente" Variant="Variant.Outlined" AllowFloatingLabel="true" Style="width:100%">
+                        <RadzenDropDownDataGrid @bind-Value="invoice.CustomerId"
+                                        Data="@customers"
+                                        TextProperty="Name"
+                                        ValueProperty="CustomerId"
+                                        Name="CustomerId"
+                                        Variant="Variant.Outlined"
+                                        Style="width: 100%;" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="CustomerId" Text="Debe seleccionar un cliente" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            @*SEGUNDA FILA*@
+            <RadzenRow Gap="1rem" Style="margin-top: 1rem;">
+                @* Referencia Presupuesto *@
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Referencia Presupuesto" Variant="Variant.Outlined" Style="width:100%">
+                        <RadzenTextBox @bind-Value="invoice.QuoteReference"
+                                       Name="QuoteReference"
+                                       Placeholder="Ej: PR2602-2258"
+                                       Style="width: 100%;" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="QuoteReference" Text="La referencia del presupuesto es obligatoria" />
+                </RadzenColumn>
+
+                @* Referencia Cliente *@
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Referencia Cliente" Variant="Variant.Outlined" Style="width:100%">
+                        <RadzenTextBox @bind-Value="invoice.CustomerReference"
+                                       Name="CustomerReference"
+                                       Placeholder="Ej: Proyecto migración cloud"
+                                       Style="width: 100%;" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="CustomerReference" Text="La referencia es obligatoria" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            @*TERCERA FILA*@
+            <RadzenRow Gap="1rem" Style="margin-top: 1rem;">
+                @* Fecha Emisión *@
+                <RadzenColumn Size="4">
+                    <RadzenFormField Text="Fecha Emisión" Variant="Variant.Outlined" Style="width:100%">
+                        <RadzenDatePicker @bind-Value="invoice.InvoiceDate"
+                                          Name="InvoiceDate"
+                                          DateFormat="dd/MM/yyyy"
+                                          Change="@OnInvoiceDateChanged"
+                                          Style="width: 100%;" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="InvoiceDate" Text="La fecha de emisión es obligatoria" />
+                </RadzenColumn>
+
+                @* Condiciones de Pago *@
+                <RadzenColumn Size="4">
+                    <RadzenFormField Text="Condiciones de Pago" Variant="Variant.Outlined" AllowFloatingLabel="true" Style="width:100%">
+                        <RadzenDropDownDataGrid @bind-Value="invoice.PaymentTermsId"
+                                        @bind-Value:after="OnPaymentTermChangedAsync"
+                                        Data="@paymentTerms"
+                                        TextProperty="Description"
+                                        ValueProperty="PaymentTermsId"
+                                        Name="PaymentTermsId"
+                                        Variant="Variant.Outlined"
+                                        Style="width: 100%;" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="PaymentTermsId" Text="Debe seleccionar las condiciones de pago" />
+                </RadzenColumn>
+
+                @* Fecha Vencimiento *@
+                <RadzenColumn Size="4">
+                    <RadzenFormField Text="Fecha Vencimiento" Variant="Variant.Outlined" Style="width:100%">
+                        <RadzenDatePicker TValue="DateTime"
+                                          Value="@invoice.DueDate"
+                                          DateFormat="dd/MM/yyyy"
+                                          Disabled="true"
+                                          Style="width: 100%; background-color: #f3f4f6;" />
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            @* Líneas de factura *@
+            <RadzenRow Gap="1rem" Style="margin-top: 2rem;">
+                <RadzenColumn Size="12">
+                    <RadzenFieldset Text="Líneas de Factura">
+                        <RadzenButton Text="Añadir Línea"
+                                      Icon="add"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Size="ButtonSize.Small"
+                                      Click="@AddLine"
+                                      Style="margin-bottom: 1rem;" />
+
+                        @if (invoiceLines.Any())
+                        {
+                            <RadzenDataGrid Data="@invoiceLines"
+                                            TItem="SalesInvoiceLines"
+                                            AllowPaging="false"
+                                            AllowSorting="false"
+                                            RowDoubleClick="@OnLineDoubleClick"
+                                            RowRender="@RowRender">
+                                <Columns>
+                                    <RadzenDataGridColumn TItem="SalesInvoiceLines" Title="Producto">
+                                        <Template Context="line">
+                                            @products?.FirstOrDefault(p => p.ProductId == line.ProductId)?.Name
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn TItem="SalesInvoiceLines" Property="CustomDescription" Title="Descripción" />
+                                    <RadzenDataGridColumn TItem="SalesInvoiceLines" Property="UnitPrice" Title="Precio Unit.">
+                                        <Template Context="line">
+                                            @line.UnitPrice.ToString("C2")
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn TItem="SalesInvoiceLines" Property="Quantity" Title="Cantidad" />
+                                    <RadzenDataGridColumn TItem="SalesInvoiceLines" Title="Total">
+                                        <Template Context="line">
+                                            @line.TotalLine.ToString("C2")
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn TItem="SalesInvoiceLines" Title="" Width="100px">
+                                        <Template Context="line">
+
+                                            <RadzenButton Icon="@(linesToDelete.Contains(line.SalesInvoiceLineId) ? "undo" : "delete")"
+                                                          ButtonStyle="@(linesToDelete.Contains(line.SalesInvoiceLineId) ? ButtonStyle.Warning : ButtonStyle.Danger)"
+                                                          Variant="Variant.Flat"
+                                                          Size="ButtonSize.Small"
+                                                          Click="@(() => DeleteLine(invoiceLines.IndexOf(line)))"
+                                                          @onclick:stopPropagation="true" />
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                </Columns>
+                            </RadzenDataGrid>
+
+                            <div style="text-align: right; font-weight: bold; margin-top: 1rem;">
+                                TOTAL: @CalculateTotal().ToString("C2")
+                            </div>
+                        }
+                        else
+                        {
+                            <p style="text-align: center; color: #6b7280; padding: 2rem;">
+                                No hay líneas añadidas. Haz clic en "Añadir Línea" para comenzar.
+                            </p>
+                        }
+                    </RadzenFieldset>
+                </RadzenColumn>
+            </RadzenRow>
+
+            @* Botones *@
+            <RadzenRow Gap="1rem" Style="margin-top: 2rem;">
+                <RadzenColumn Size="12" Style="text-align: right;">
+                    <RadzenButton Text="Cancelar"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@Cancel"
+                                  Style="margin-right: 0.5rem;" />
+                    <RadzenButton Text="Guardar"
+                                  ButtonType="ButtonType.Submit"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Icon="save" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenTemplateForm>
+    }
+</RadzenStack>

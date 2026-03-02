@@ -23,32 +23,41 @@ namespace InvoicingSystem.Server.Controllers
     public partial class SalesInvoiceHeadersController : ODataController
     {
         private readonly InvoicingSystemDbContext context;
+        private readonly ILogger<SalesInvoiceHeadersController> _logger;
 
-        // Inyectamos el DbContext 
-        public SalesInvoiceHeadersController(InvoicingSystemDbContext context)
+        // Inyectamos el DbContext y el Logger
+        public SalesInvoiceHeadersController(InvoicingSystemDbContext context, ILogger<SalesInvoiceHeadersController> logger)
         {
             this.context = context;
+            _logger = logger;
         }
 
         #region GET(todos)
-        // --- 1. LISTAR TODOS (GET) - Soporta filtros de OData como $filter, $orderby, etc.
+        // Listo todas las facturas incluyendo sus líneas
         [HttpGet]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
         public IEnumerable<SalesInvoiceHeaders> GetSalesInvoiceHeaders()
         {
-            // AsNoTracking() hace que EF no "vigile" los objetos para que el listado vaya más rápido
-            var items = this.context.SalesInvoiceHeaders.AsNoTracking().AsQueryable();
+            // Incluyo las líneas para que se carguen junto con la factura
+            var items = this.context.SalesInvoiceHeaders
+                .Include(h => h.Lines)
+                .AsNoTracking()
+                .AsQueryable();
             return items;
         }
         #endregion
 
         #region GET(1)
-        // --- 2. OBTENER UNO POR ID (Para editar con doble click en este caso)
+        // Obtengo una factura por ID incluyendo sus líneas
         [HttpGet("/odata/InvoicingSystem/SalesInvoiceHeaders({key})")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
         public SingleResult<SalesInvoiceHeaders> GetSalesInvoiceHeaders(string key)
         {
-            var items = this.context.SalesInvoiceHeaders.AsNoTracking().Where(i => i.SalesInvoiceHeaderId == key);
+            // Incluyo las líneas para que se carguen con la factura
+            var items = this.context.SalesInvoiceHeaders
+                .Include(h => h.Lines)
+                .AsNoTracking()
+                .Where(i => i.SalesInvoiceHeaderId == key);
             var result = SingleResult.Create(items);
 
             return result;
@@ -88,8 +97,8 @@ namespace InvoicingSystem.Server.Controllers
         #endregion
 
         #region PUT
-        // --- 4. ACTUALIZAR TODO (PUT)
-        // Permito editar productos facturados porque CurrentPrice es independiente de UnitPrice en facturas      [HttpPut("/odata/InvoicingSystem/SalesInvoiceHeaders({key})")]
+        // Actualizo una factura completa incluyendo sus líneas
+        [HttpPut("/odata/InvoicingSystem/SalesInvoiceHeaders({key})")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
         public IActionResult PutSalesInvoiceHeaders(string key, [FromBody]SalesInvoiceHeadersDTO itemDto)
         {
@@ -97,14 +106,24 @@ namespace InvoicingSystem.Server.Controllers
             {
                 if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                // Compruebo que el ID de la URL coincida con el del objeto
                 if (itemDto == null || (itemDto.SalesInvoiceHeaderId != key)) return BadRequest();
 
-                var entityToUpdate = this.context.SalesInvoiceHeaders.FirstOrDefault(i => i.SalesInvoiceHeaderId == key);
-                if (entityToUpdate == null) return NotFound();
+                // Debug: Log de entrada
+                _logger.LogWarning($"[SERVER] ===== PUT FACTURA INICIADO =====");
+                _logger.LogWarning($"[SERVER] Factura: {key}");
+                _logger.LogWarning($"[SERVER] Líneas recibidas en DTO: {itemDto.Lines?.Count ?? 0}");
 
-                // Mapeo Manual: Volcar datos del DTO a la Entidad
-                entityToUpdate.SalesInvoiceHeaderId = itemDto.SalesInvoiceHeaderId;
+                // Cargo la entidad existente SIN las líneas primero
+                var entityToUpdate = this.context.SalesInvoiceHeaders
+                    .FirstOrDefault(i => i.SalesInvoiceHeaderId == key);
+
+                if (entityToUpdate == null)
+                {
+                    _logger.LogError($"[SERVER] Factura no encontrada: {key}");
+                    return NotFound();
+                }
+
+                // Actualizo los campos de la cabecera
                 entityToUpdate.CustomerReference = itemDto.CustomerReference;
                 entityToUpdate.InvoiceDate = itemDto.InvoiceDate;
                 entityToUpdate.DueDate = itemDto.DueDate;
@@ -112,15 +131,69 @@ namespace InvoicingSystem.Server.Controllers
                 entityToUpdate.CustomerId = itemDto.CustomerId;
                 entityToUpdate.PaymentTermsId = itemDto.PaymentTermsId;
 
+                // Estrategia simple: Elimino TODAS las líneas viejas y añado TODAS las nuevas
+                // Primero elimino todas las líneas existentes de esta factura
+                var existingLines = this.context.SalesInvoiceLines
+                    .Where(l => l.SalesInvoiceHeaderId == key)
+                    .ToList();
 
-                this.context.SalesInvoiceHeaders.Update(entityToUpdate);
-                this.context.SaveChanges();
+                _logger.LogWarning($"[SERVER] Líneas existentes a eliminar: {existingLines.Count}");
 
-                var itemToReturn = this.context.SalesInvoiceHeaders.Where(i => i.SalesInvoiceHeaderId == key);
-                return new ObjectResult(SingleResult.Create(itemToReturn));
+                if (existingLines.Any())
+                {
+                    this.context.SalesInvoiceLines.RemoveRange(existingLines);
+                    _logger.LogWarning($"[SERVER] RemoveRange ejecutado");
+                }
+
+                // Ahora añado todas las líneas del DTO como nuevas
+                if (itemDto.Lines != null && itemDto.Lines.Any())
+                {
+                    _logger.LogWarning($"[SERVER] Añadiendo {itemDto.Lines.Count} líneas nuevas");
+
+                    foreach (var lineDto in itemDto.Lines)
+                    {
+                        var newGuid = Guid.NewGuid();
+                        var newLine = new SalesInvoiceLines
+                        {
+                            SalesInvoiceLineId = newGuid,
+                            SalesInvoiceHeaderId = key,
+                            ProductId = lineDto.ProductId,
+                            TaxRateId = lineDto.TaxRateId,
+                            UnitPrice = lineDto.UnitPrice,
+                            Quantity = lineDto.Quantity,
+                            CustomDescription = lineDto.CustomDescription
+                        };
+
+                        _logger.LogWarning($"[SERVER] Creando línea: GUID={newGuid}, Producto={newLine.ProductId}, Cantidad={newLine.Quantity}");
+                        this.context.SalesInvoiceLines.Add(newLine);
+                        _logger.LogWarning($"[SERVER] Línea añadida al contexto");
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning($"[SERVER] DTO no tiene líneas");
+                }
+
+                _logger.LogWarning($"[SERVER] Ejecutando SaveChanges...");
+                var changesCount = this.context.SaveChanges();
+                _logger.LogWarning($"[SERVER] SaveChanges completado. Cambios guardados: {changesCount}");
+
+                // Cargo la factura actualizada con las líneas para devolverla
+                var itemToReturn = this.context.SalesInvoiceHeaders
+                    .AsNoTracking()
+                    .Include(h => h.Lines)
+                    .Where(i => i.SalesInvoiceHeaderId == key)
+                    .FirstOrDefault();
+
+                _logger.LogWarning($"[SERVER] Líneas en respuesta: {itemToReturn?.Lines.Count ?? 0}");
+                _logger.LogWarning($"[SERVER] ===== PUT FACTURA COMPLETADO =====");
+
+                return new ObjectResult(SingleResult.Create(new[] { itemToReturn }.AsQueryable()));
             }
             catch(Exception ex)
             {
+                _logger.LogError($"[SERVER] ERROR: {ex.Message}");
+                _logger.LogError($"[SERVER] STACK TRACE: {ex.StackTrace}");
                 ModelState.AddModelError("", ex.Message);
                 return BadRequest(ModelState);
             }
@@ -160,7 +233,7 @@ namespace InvoicingSystem.Server.Controllers
         #endregion
 
         #region POST
-        // --- 6. CREAR (POST)
+        // Creo una factura nueva con sus líneas
         [HttpPost]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
         public IActionResult Post([FromBody] SalesInvoiceHeadersDTO itemDto)
@@ -170,29 +243,44 @@ namespace InvoicingSystem.Server.Controllers
                 if (!ModelState.IsValid) return BadRequest(ModelState);
                 if (itemDto == null) return BadRequest();
 
-                // MAPEO MANUAL: Creo una entidad nueva a partir de los datos del DTO
+                // Creo la entidad de cabecera
                 var newEntity = new SalesInvoiceHeaders
                 {
-
                     SalesInvoiceHeaderId = itemDto.SalesInvoiceHeaderId,
                     CustomerReference = itemDto.CustomerReference,
                     InvoiceDate = itemDto.InvoiceDate,
                     DueDate = itemDto.DueDate,
                     QuoteReference = itemDto.QuoteReference,
-                    Customer = null!,
                     CustomerId = itemDto.CustomerId,
                     PaymentTermsId = itemDto.PaymentTermsId,
-                    PaymentTerms = null!
-
+                    Lines = new List<SalesInvoiceLines>()
                 };
 
+                // Añado las líneas si existen
+                if (itemDto.Lines != null && itemDto.Lines.Any())
+                {
+                    foreach (var lineDto in itemDto.Lines)
+                    {
+                        newEntity.Lines.Add(new SalesInvoiceLines
+                        {
+                            SalesInvoiceLineId = lineDto.SalesInvoiceLineId == Guid.Empty ? Guid.NewGuid() : lineDto.SalesInvoiceLineId,
+                            SalesInvoiceHeaderId = itemDto.SalesInvoiceHeaderId,
+                            ProductId = lineDto.ProductId,
+                            TaxRateId = lineDto.TaxRateId,
+                            UnitPrice = lineDto.UnitPrice,
+                            Quantity = lineDto.Quantity,
+                            CustomDescription = lineDto.CustomDescription
+                        });
+                    }
+                }
 
                 this.context.SalesInvoiceHeaders.Add(newEntity);
                 this.context.SaveChanges();
 
-                var itemToReturn = this.context.SalesInvoiceHeaders.Where(i => i.SalesInvoiceHeaderId == newEntity.SalesInvoiceHeaderId);
+                var itemToReturn = this.context.SalesInvoiceHeaders
+                    .Include(h => h.Lines)
+                    .Where(i => i.SalesInvoiceHeaderId == newEntity.SalesInvoiceHeaderId);
 
-                // Devuelvo 201 Created con el objeto nuevo
                 return new ObjectResult(SingleResult.Create(itemToReturn))
                 {
                     StatusCode = 201

@@ -1,0 +1,86 @@
+@using InvoicingSystem.Server.Data.Models
+@using InvoicingSystem.Client.Interfaces
+@using Radzen
+@using Radzen.Blazor
+
+<RadzenStack Gap="1rem">
+    <RadzenRow Gap="1rem">
+        <RadzenColumn Size="12">
+            <RadzenFormField Text="Producto" Variant="Variant.Outlined" Style="width:100%">
+                <RadzenDropDown @bind-Value="line.ProductId"
+                                @bind-Value:after="OnProductChangedAsync"
+                                Data="@Products"
+                                TextProperty="Name"
+                                ValueProperty="ProductId"
+                                Variant="Variant.Outlined"
+                                Style="width: 100%;" />
+            </RadzenFormField>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenRow Gap="1rem">
+        <RadzenColumn Size="12">
+            <RadzenFormField Text="Descripción Personalizada" Variant="Variant.Outlined" Style="width:100%">
+                <RadzenTextArea @bind-Value="line.CustomDescription"
+                                Rows="3"
+                                MaxLength="500"
+                                Style="width: 100%;" />
+            </RadzenFormField>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenRow Gap="1rem">
+        <RadzenColumn Size="4">
+            <RadzenFormField Text="Precio Unitario (€)" Variant="Variant.Outlined" Style="width:100%">
+                <RadzenNumeric @bind-Value="line.UnitPrice"
+                               ShowUpDown="false"
+                               Min="0"
+                               Max="999999.99m"
+                               Format="c2"
+                               Disabled="true"
+                               Style="width: 100%;" />
+            </RadzenFormField>
+            <small style="color: #6b7280; display: block; margin-top: 0.25rem;">Precio del producto (no editable)</small>
+        </RadzenColumn>
+        <RadzenColumn Size="4">
+            <RadzenFormField Text="Cantidad" Variant="Variant.Outlined" Style="width:100%">
+                <RadzenNumeric @bind-Value="line.Quantity"
+                               ShowUpDown="true"
+                               Min="1"
+                               Max="10000"
+                               Style="width: 100%;" />
+            </RadzenFormField>
+        </RadzenColumn>
+        <RadzenColumn Size="4">
+            <RadzenFormField Text="Tipo de IVA" Variant="Variant.Outlined" Style="width:100%">
+                <RadzenDropDown @bind-Value="line.TaxRateId"
+                                Data="@TaxRates"
+                                TextProperty="Name"
+                                ValueProperty="TaxRateId"
+                                Variant="Variant.Outlined"
+                                Style="width: 100%;" />
+            </RadzenFormField>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenRow Gap="1rem">
+        <RadzenColumn Size="12">
+            <div style="background-color: #f9fafb; padding: 1rem; border-radius: 6px; border: 1px solid #e5e7eb;">
+                <strong style="color: #1f2937;">Total línea: @line.TotalLine.ToString("C2")</strong>
+            </div>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenRow Gap="1rem" Style="margin-top: 1rem;">
+        <RadzenColumn Size="12" Style="text-align: right;">
+            <RadzenButton Text="Cancelar"
+                          ButtonStyle="ButtonStyle.Light"
+                          Click="@Cancel"
+                          Style="margin-right: 0.5rem;" />
+            <RadzenButton Text="Guardar"
+                          ButtonStyle="ButtonStyle.Success"
+                          Icon="save"
+                          Click="@Save" />
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>

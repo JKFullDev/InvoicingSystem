@@ -13,6 +13,7 @@ builder.Services.AddScoped<IPaymentTermsService, PaymentTermsService>();
 builder.Services.AddScoped<IProductsService, ProductsService>();
 builder.Services.AddScoped<ITaxRatesService, TaxRatesService>();
 builder.Services.AddScoped<ISalesInvoiceLinesService, SalesInvoiceLinesService>();
+builder.Services.AddScoped<ISalesInvoiceHeadersService, SalesInvoiceHeadersService>();
 builder.Services.AddRadzenCookieThemeService(options =>
 {
     options.Name = "InvoicingSystemTheme";

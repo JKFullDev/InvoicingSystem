@@ -20,13 +20,17 @@ namespace InvoicingSystem.Server.Data.Models.DTOs
         public required string QuoteReference { get; set; }
 
         [Required]
-        public required string CustomerId { get; set; } //FK
-        public required CustomersDTO Customer { get; set; } // La propiedad de navegación (para hacer .Include(x => x.Customer))
+        public required string CustomerId { get; set; } // FK
 
-        [Required]
-        public Guid PaymentTermsId { get; set; } //FK
-        public required PaymentTermsDTO PaymentTerms { get; set; }
+        // Quito required porque al enviar desde el cliente solo envío los IDs
+        public CustomersDTO? Customer { get; set; }
 
-        public List<SalesInvoiceLinesDTO> Lines { get; set; } = new();  // Relación 1-a-N con las líneas
+        // Nullable para floating labels - Validación en cliente con RadzenRequiredValidator
+        public Guid? PaymentTermsId { get; set; } // FK nullable
+
+        // Quito required porque al enviar desde el cliente solo envío los IDs
+        public PaymentTermsDTO? PaymentTerms { get; set; }
+
+        public List<SalesInvoiceLinesDTO> Lines { get; set; } = new();
     }
 }

@@ -58,8 +58,13 @@ namespace InvoicingSystem.Client.Pages
         protected void GoToAdd()
         {
             isNew = true;
-            taxRateToEdit = new TaxRates { Name = ""};
-            isTaxRateInvoiced = false; // Reseteo la advertencia
+            taxRateToEdit = new TaxRates 
+            { 
+                TaxRateId = Guid.NewGuid(), // Genero un nuevo GUID
+                Name = "",
+                Percentage = 0
+            };
+            isTaxRateInvoiced = false;
             invoiceCount = 0;
             showForm = true;
         }

@@ -28,6 +28,7 @@ builder.Services.AddScoped<IPaymentTermsService, PaymentTermsService>();
 builder.Services.AddScoped<IProductsService, ProductsService>();
 builder.Services.AddScoped<ITaxRatesService, TaxRatesService>();
 builder.Services.AddScoped<ISalesInvoiceLinesService, SalesInvoiceLinesService>();
+builder.Services.AddScoped<ISalesInvoiceHeadersService, SalesInvoiceHeadersService>();
 builder.Services.AddRadzenComponents();
 builder.Services.AddRadzenCookieThemeService(options =>
 {
@@ -72,6 +73,7 @@ static IEdmModel GetEdmModel()
     builder.EntitySet<Products>("Products");
     builder.EntitySet<TaxRates>("TaxRates");
     builder.EntitySet<SalesInvoiceLines>("SalesInvoiceLines");
+    builder.EntitySet<SalesInvoiceHeaders>("SalesInvoiceHeaders");
     // Añade aquí el resto de tablas cuando crees sus controllers (Products, etc.)
     return builder.GetEdmModel();
 }
