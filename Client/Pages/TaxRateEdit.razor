@@ -1,0 +1,169 @@
+@using InvoicingSystem.Server.Data.Models
+@using InvoicingSystem.Client.Interfaces
+@using Radzen
+@using Radzen.Blazor
+@inject ITaxRatesService TaxRatesService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<PageTitle>@(IsNew ? "Nuevo Tipo de IVA" : "Editar Tipo de IVA")</PageTitle>
+
+<RadzenStack Gap="1rem">
+    @if (isLoading)
+    {
+        <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+    }
+    else if (taxRate != null)
+    {
+        <RadzenTemplateForm Data="@taxRate" Submit="@OnSubmit" TItem="TaxRates">
+            <RadzenRow Gap="1rem">
+                @* Nombre del tipo de IVA *@
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Nombre" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenTextBox @bind-Value="taxRate.Name"
+                                       Name="Name"
+                                       Placeholder="Ej: IVA General 21%"
+                                       class="input-full" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="Name" Text="El nombre es obligatorio" />
+                </RadzenColumn>
+                @* Porcentaje *@
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="Porcentaje (%)" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenNumeric @bind-Value="taxRate.Percentage"
+                                       Name="Percentage"
+                                       ShowUpDown="true"
+                                       Min="0"
+                                       Max="100"
+                                       Step="0.01m"
+                                       class="input-full" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="Percentage" Text="El porcentaje es obligatorio" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            @* Botones *@
+            <RadzenRow Gap="1rem" class="row-spacing-large">
+                <RadzenColumn Size="12" class="text-right">
+                    <RadzenButton Text="Cancelar"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@Cancel"
+                                  class="btn-cancel" />
+                    <RadzenButton Text="Guardar"
+                                  ButtonType="ButtonType.Submit"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Icon="save" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenTemplateForm>
+    }
+</RadzenStack>
+
+<style>
+    /* Inputs y FormFields */
+    .form-field-full {
+        width: 100%;
+    }
+
+    .input-full {
+        width: 100%;
+    }
+
+    .input-disabled {
+        background-color: #f3f4f6;
+    }
+
+    /* Espaciado de filas */
+    .row-spacing {
+        margin-top: 1rem;
+    }
+
+    .row-spacing-large {
+        margin-top: 2rem;
+    }
+
+    /* Botones */
+    .btn-cancel {
+        margin-right: 0.5rem;
+    }
+
+    /* Alineación */
+    .text-right {
+        text-align: right;
+    }
+
+    /* Mensaje de líneas vacías */
+    .empty-lines-message {
+        text-align: center;
+        color: #6b7280;
+        padding: 2rem;
+    }
+
+    /* Alineación de texto */
+    .text-right {
+        text-align: right;
+    }
+
+    /* Sidebar de líneas - Overlay */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 99998;
+    }
+
+    /* Sidebar de líneas - Panel */
+    .sidebar-panel {
+        position: fixed;
+        top: 0;
+        height: 100vh;
+        background: white;
+        z-index: 99999;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-left {
+        left: 0;
+        width: 50%;
+        max-width: 700px;
+        animation: slideInLeft 0.3s ease-out;
+    }
+
+    /* Header del sidebar */
+    .sidebar-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .sidebar-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    /* Contenido del sidebar */
+    .sidebar-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+    }
+
+    /* Animación del sidebar */
+    @@keyframes slideInLeft {
+        from {
+            transform: translateX(-100%);
+        }
+        to {
+            transform: translateX(0);
+        }
+    }
+</style>

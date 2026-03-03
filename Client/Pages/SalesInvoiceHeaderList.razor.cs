@@ -81,7 +81,7 @@ namespace InvoicingSystem.Client.Pages
             {
                 _firstRender = false;
 
-                // Pequeño delay para que se vea el skeleton (opcional)
+                // Pequeño delay para que se vea el skeleton 
                 await Task.Delay(200);
 
                 // Cargo los datos reales reemplazando los placeholders

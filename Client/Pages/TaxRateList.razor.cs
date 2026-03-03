@@ -15,16 +15,21 @@ namespace InvoicingSystem.Client.Pages
         [Inject] protected ITaxRatesService TaxRatesService { get; set; } = default!;
         [Inject] protected NotificationService NotificationService { get; set; } = default!;
 
+        //Servicio de Razden para abrir Modals. Lo uso para el formulario de edición
+        [Inject] protected DialogService DialogService { get; set; } = default!;
+
         // Variables de la tabla
         protected RadzenDataGrid<TaxRates> grid = default!;
         protected IEnumerable<TaxRates>? taxRates;
         protected int count;
-        protected bool isLoading = false;
+        protected bool isLoading = true;
+        private bool _firstRender = true;
 
-        // Variables del formulario Maestro-Detalle
-        protected bool showForm = false;
-        protected bool isNew = false;
-        protected TaxRates taxRateToEdit = new TaxRates { Name = "" };
+        // Variables para el sidebar
+        private bool sidebarExpanded = false;
+        private string sidebarTitle = "";
+        private bool isNewTaxRate = true;
+        private Guid? selectedTaxRateId = null;  // Cambio a Guid? porque TaxRateId es Guid
 
         // Indico si el taxRateo está en facturas
         protected bool isTaxRateInvoiced = false;
@@ -32,7 +37,50 @@ namespace InvoicingSystem.Client.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            taxRates = new List<TaxRates>
+            {
+                new TaxRates
+                {
+                    Name="",
+                    Percentage=-1
+                },
+                new TaxRates
+                {
+                    Name="",
+                    Percentage=-1
+                },
+                new TaxRates
+                {
+                    Name="",
+                    Percentage=-1
+                },
+                new TaxRates
+                {
+                    Name="",
+                    Percentage=-1
+                },
+                new TaxRates
+                {
+                    Name="",
+                    Percentage=-1
+                }
+            };
             await InvokeAsync(StateHasChanged);
+        }
+
+        // Después del primer renderizado, cargo los datos reales
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender && _firstRender)
+            {
+                _firstRender = false;
+
+                // Pequeño delay para que se vea el skeleton 
+                await Task.Delay(200);
+
+                // Cargo los datos reales reemplazando los placeholders
+                await grid.Reload();
+            }
         }
 
         protected async Task LoadData(LoadDataArgs args)
@@ -57,114 +105,29 @@ namespace InvoicingSystem.Client.Pages
 
         protected void GoToAdd()
         {
-            isNew = true;
-            taxRateToEdit = new TaxRates 
-            { 
-                TaxRateId = Guid.NewGuid(), // Genero un nuevo GUID
-                Name = "",
-                Percentage = 0
-            };
-            isTaxRateInvoiced = false;
-            invoiceCount = 0;
-            showForm = true;
+            sidebarTitle = "Nuevo Impuesto";
+            isNewTaxRate = true;
+            selectedTaxRateId = null;
+            sidebarExpanded = true;
         }
 
         protected async Task OnRowDoubleClick(DataGridRowMouseEventArgs<TaxRates> args)
         {
             if (args.Data == null) return;
 
-            isNew = false;
-
-            // Clono el taxRateo para editarlo
-            taxRateToEdit = new TaxRates
-            {
-                TaxRateId = args.Data.TaxRateId,
-                Name = args.Data.Name ?? "",
-                Percentage = args.Data.Percentage,
-            };
-
-            // Verifico si el taxRateo está en facturas para mostrar advertencia
-            var (isInvoiced, count) = await TaxRatesService.IsTaxRateInvoiced(args.Data.TaxRateId);
-            isTaxRateInvoiced = isInvoiced;
-            invoiceCount = count;
-
-            showForm = true;
+            sidebarTitle = $"Editar Impuesto: {args.Data.Name}";
+            isNewTaxRate = false;
+            selectedTaxRateId = args.Data.TaxRateId;
+            sidebarExpanded = true;
         }
-
-        protected void CancelEdit()
+        // Cierro el sidebar y recargo si es necesario
+        private async Task CloseSidebar(bool reload = false)
         {
-            showForm = false;
-        }
+            sidebarExpanded = false;
 
-        protected async Task SaveTaxRate(TaxRates item)
-        {
-            try
+            if (reload)
             {
-                // Mapeo el taxRateo a DTO para enviarlo al servidor
-                var dto = new TaxRatesDTO
-                {
-                    TaxRateId = item.TaxRateId,
-                    Name = item.Name,
-                    Percentage = item.Percentage,
-                };
-
-                if (isNew)
-                {
-                    var createdTaxRate = await TaxRatesService.CreateTaxRates(dto);
-                    if (createdTaxRate != null)
-                    {
-                        NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Success,
-                            Summary = "Éxito",
-                            Detail = "TaxRateo creado correctamente",
-                            Duration = 4000
-                        });
-                    }
-                }
-                else
-                {
-                    // Uso PUT para actualizar completamente el taxRateo
-                    var response = await TaxRatesService.ReplaceTaxRates(item.TaxRateId, dto);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Success,
-                            Summary = "Éxito",
-                            Detail = "TaxRateo actualizado correctamente",
-                            Duration = 4000
-                        });
-                    }
-                    else
-                    {
-                        var errorContent = await response.Content.ReadAsStringAsync();
-                        NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Error,
-                            Summary = "Error al actualizar",
-                            Detail = $"No se pudo actualizar el taxRateo. Código: {response.StatusCode}",
-                            Duration = 6000
-                        });
-                        Console.WriteLine($"Error: {errorContent}");
-                        return; // No cierro el formulario si hay error
-                    }
-                }
-
-                showForm = false;
-                await grid.Reload(); // Recargo la tabla para mostrar los cambios
-            }
-            catch (Exception ex)
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = $"Error al guardar: {ex.Message}",
-                    Duration = 6000
-                });
-                Console.WriteLine($"Error al guardar: {ex.Message}");
+                await grid.Reload();
             }
         }
 
@@ -180,7 +143,7 @@ namespace InvoicingSystem.Client.Pages
                     {
                         Severity = NotificationSeverity.Success,
                         Summary = "Éxito",
-                        Detail = "TaxRateo eliminado correctamente",
+                        Detail = "Impuesto eliminado correctamente",
                         Duration = 4000
                     });
                     await grid.Reload();
@@ -194,7 +157,7 @@ namespace InvoicingSystem.Client.Pages
                     {
                         Severity = NotificationSeverity.Error,
                         Summary = "No se puede eliminar",
-                        Detail = "No se puede eliminar este taxRateo porque está siendo utilizado en una o más facturas.",
+                        Detail = "No se puede eliminar este impuesto porque está siendo utilizado en una o más facturas.",
                         Duration = 6000
                     });
                 }
@@ -204,7 +167,7 @@ namespace InvoicingSystem.Client.Pages
                     {
                         Severity = NotificationSeverity.Warning,
                         Summary = "No encontrado",
-                        Detail = "El taxRateo no existe",
+                        Detail = "El impuesto no existe",
                         Duration = 4000
                     });
                 }
@@ -214,7 +177,7 @@ namespace InvoicingSystem.Client.Pages
                     {
                         Severity = NotificationSeverity.Error,
                         Summary = "Error",
-                        Detail = "Error al eliminar el taxRateo",
+                        Detail = "Error al eliminar el impuesto",
                         Duration = 4000
                     });
                 }

@@ -1,0 +1,120 @@
+@using InvoicingSystem.Server.Data.Models
+@using InvoicingSystem.Client.Interfaces
+@using Radzen
+@using Radzen.Blazor
+@inject ICustomersService CustomersService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<PageTitle>@(IsNew ? "Nuevo Cliente" : "Editar Cliente")</PageTitle>
+
+<RadzenStack Gap="1rem">
+    @if (isLoading)
+    {
+        <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+    }
+    else if (customer != null)
+    {
+        <RadzenTemplateForm Data="@customer" Submit="@OnSubmit" TItem="Customers">
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="ID Cliente" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenTextBox @bind-Value="customer.CustomerId"
+                                       Name="CustomerId"
+                                       Placeholder="Ej: CLI001"
+                                       Disabled="@(!IsNew)"
+                                       class="@(IsNew ? "input-full" : "input-full input-disabled")" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="CustomerId" Text="El ID es obligatorio" />
+                </RadzenColumn>
+                <RadzenColumn Size="6">
+                    <RadzenFormField Text="NIF" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenTextBox @bind-Value="customer.Nif"
+                                       Name="Nif"
+                                       Placeholder="Ej: B12345678"
+                                       class="input-full" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="Nif" Text="El NIF es obligatorio" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow Gap="1rem" class="row-spacing">
+                <RadzenColumn Size="12">
+                    <RadzenFormField Text="Nombre" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenTextBox @bind-Value="customer.Name"
+                                       Name="Name"
+                                       Placeholder="Ej: Acme Corporation"
+                                       class="input-full" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="Name" Text="El nombre es obligatorio" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow Gap="1rem" class="row-spacing">
+                <RadzenColumn Size="8">
+                    <RadzenFormField Text="Dirección" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenTextBox @bind-Value="customer.Address"
+                                       Name="Address"
+                                       Placeholder="Ej: Calle Mayor 123"
+                                       class="input-full" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="Address" Text="La dirección es obligatoria" />
+                </RadzenColumn> 
+
+                <RadzenColumn Size="4">
+                    <RadzenFormField Text="Ciudad" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenTextBox @bind-Value="customer.City"
+                                       Name="City"
+                                       Placeholder="Ej: Madrid"
+                                       class="input-full" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="City" Text="La ciudad es obligatoria" />
+                </RadzenColumn>
+            </RadzenRow>
+
+
+            <RadzenRow Gap="1rem" class="row-spacing-large">
+                <RadzenColumn Size="12" class="text-right">
+                    <RadzenButton Text="Cancelar"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@Cancel"
+                                  class="btn-cancel" />
+                    <RadzenButton Text="Guardar"
+                                  ButtonType="ButtonType.Submit"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Icon="save" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenTemplateForm>
+    }
+</RadzenStack>
+
+<style>
+    .form-field-full {
+        width: 100%;
+    }
+
+    .input-full {
+        width: 100%;
+    }
+
+    .input-disabled {
+        background-color: #f3f4f6;
+    }
+
+    .row-spacing {
+        margin-top: 1rem;
+    }
+
+    .row-spacing-large {
+        margin-top: 2rem;
+    }
+
+    .btn-cancel {
+        margin-right: 0.5rem;
+    }
+
+    .text-right {
+        text-align: right;
+    }
+</style>

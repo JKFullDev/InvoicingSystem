@@ -42,7 +42,7 @@
 <div class="page-header">
     <h1>Gestión de Facturas</h1>
 
-    <RadzenButton Text="Nueva Factura"
+    <RadzenButton Text="Añadir Factura"
                   Icon="add_circle_outline"
                   ButtonStyle="ButtonStyle.Primary"
                   Click="@GoToAdd"
@@ -183,18 +183,11 @@
 @* Sidebar deslizante desde la derecha para editar/crear facturas *@
 @if (sidebarExpanded)
 {
-    <!-- Overlay oscuro -->
-    <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999;" 
-         @onclick="@(() => CloseSidebar(false))"></div>
+    <div class="sidebar-overlay" @onclick="@(() => CloseSidebar(false))"></div>
 
-    <!-- Panel del sidebar -->
-    <div style="position: fixed; right: 0; top: 0; width: 700px; height: 100vh; background: white; z-index: 1000; 
-                box-shadow: -2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column;
-                animation: slideInRight 0.3s ease-out;">
-
-        <!-- Header del sidebar -->
-        <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600; color: #1f2937;">@sidebarTitle</h2>
+    <div class="sidebar-panel sidebar-right">
+        <div class="sidebar-header">
+            <h2 class="sidebar-title-large">@sidebarTitle</h2>
             <RadzenButton Icon="close" 
                           ButtonStyle="ButtonStyle.Light" 
                           Variant="Variant.Flat"
@@ -202,11 +195,64 @@
                           Click="@(() => CloseSidebar(false))" />
         </div>
 
-        <!-- Contenido del sidebar -->
-        <div style="flex: 1; overflow-y: auto; padding: 1.5rem;">
+        <div class="sidebar-content">
             <SalesInvoiceHeaderEdit IsNew="@isNewInvoice" 
                                    InvoiceId="@selectedInvoiceId"
                                    OnClose="@CloseSidebar" />
         </div>
     </div>
 }
+
+<style>
+    /* Sidebar - Overlay */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+    }
+
+    /* Sidebar - Panel */
+    .sidebar-panel {
+        position: fixed;
+        top: 0;
+        height: 100vh;
+        background: white;
+        z-index: 9999;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-right {
+        right: 0;
+        width: 700px;
+        animation: slideInRight 0.3s ease-out;
+    }
+
+    /* Sidebar - Header */
+    .sidebar-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .sidebar-title-large {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    /* Sidebar - Content */
+    .sidebar-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+    }
+</style>

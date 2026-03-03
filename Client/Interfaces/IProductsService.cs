@@ -8,8 +8,8 @@ namespace InvoicingSystem.Client.Interfaces
 {
     public interface IProductsService
     {
-        // GET (Listado)
-        Task<ODataServiceResult<Products>?> GetProducts(Query query);
+        // GET (Listado) - Query puede ser null
+        Task<ODataServiceResult<Products>?> GetProducts(Query? query);
 
         // POST (Crear enviando DTO)
         Task<Products?> CreateProducts(ProductsDTO paymentTermsDto);

@@ -1,6 +1,5 @@
-﻿using InvoicingSystem.Client.Interfaces;
+using InvoicingSystem.Client.Interfaces;
 using InvoicingSystem.Server.Data.Models;
-using InvoicingSystem.Server.Data.Models.DTOs;
 using Microsoft.AspNetCore.Components;
 using Radzen;
 using Radzen.Blazor;
@@ -14,25 +13,40 @@ namespace InvoicingSystem.Client.Pages
     {
         [Inject] protected IProductsService ProductsService { get; set; } = default!;
         [Inject] protected NotificationService NotificationService { get; set; } = default!;
+        [Inject] protected DialogService DialogService { get; set; } = default!;
 
-        // Variables de la tabla
         protected RadzenDataGrid<Products> grid = default!;
         protected IEnumerable<Products>? products;
         protected int count;
-        protected bool isLoading = false;
+        protected bool isLoading = true;
+        private bool _firstRender = true;
 
-        // Variables del formulario Maestro-Detalle
-        protected bool showForm = false;
-        protected bool isNew = false;
-        protected Products productToEdit = new Products { Name = "", Description = "" };
-
-        // Indico si el producto está en facturas
-        protected bool isProductInvoiced = false;
-        protected int invoiceCount = 0;
+        private bool sidebarExpanded = false;
+        private string sidebarTitle = "";
+        private bool isNewProduct = true;
+        private Guid? selectedProductId = null;
 
         protected override async Task OnInitializedAsync()
         {
+            products = new List<Products>
+            {
+                new Products { ProductId = Guid.Empty, Name = "", Description = "", CurrentPrice = -1 },
+                new Products { ProductId = Guid.Empty, Name = "", Description = "", CurrentPrice = -1 },
+                new Products { ProductId = Guid.Empty, Name = "", Description = "", CurrentPrice = -1 },
+                new Products { ProductId = Guid.Empty, Name = "", Description = "", CurrentPrice = -1 },
+                new Products { ProductId = Guid.Empty, Name = "", Description = "", CurrentPrice = -1 }
+            };
             await InvokeAsync(StateHasChanged);
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender && _firstRender)
+            {
+                _firstRender = false;
+                await Task.Delay(200);
+                await grid.Reload();
+            }
         }
 
         protected async Task LoadData(LoadDataArgs args)
@@ -57,111 +71,29 @@ namespace InvoicingSystem.Client.Pages
 
         protected void GoToAdd()
         {
-            isNew = true;
-            productToEdit = new Products { Name = "", Description = "" };
-            isProductInvoiced = false; // Reseteo la advertencia
-            invoiceCount = 0;
-            showForm = true;
+            sidebarTitle = "Nuevo Producto";
+            isNewProduct = true;
+            selectedProductId = null;
+            sidebarExpanded = true;
         }
 
-        protected async Task OnRowDoubleClick(DataGridRowMouseEventArgs<Products> args)
+        protected void OnRowDoubleClick(DataGridRowMouseEventArgs<Products> args)
         {
             if (args.Data == null) return;
 
-            isNew = false;
-
-            // Clono el producto para editarlo
-            productToEdit = new Products
-            {
-                ProductId = args.Data.ProductId,
-                Name = args.Data.Name ?? "",
-                Description = args.Data.Description ?? "",
-                CurrentPrice = args.Data.CurrentPrice
-            };
-
-            // Verifico si el producto está en facturas para mostrar advertencia
-            var (isInvoiced, count) = await ProductsService.IsProductInvoiced(args.Data.ProductId);
-            isProductInvoiced = isInvoiced;
-            invoiceCount = count;
-
-            showForm = true;
+            sidebarTitle = $"Editar: {args.Data.Name}";
+            isNewProduct = false;
+            selectedProductId = args.Data.ProductId;
+            sidebarExpanded = true;
         }
 
-        protected void CancelEdit()
+        private async Task CloseSidebar(bool reload = false)
         {
-            showForm = false;
-        }
+            sidebarExpanded = false;
 
-        protected async Task SaveProduct(Products item)
-        {
-            try
+            if (reload)
             {
-                // Mapeo el producto a DTO para enviarlo al servidor
-                var dto = new ProductsDTO
-                {
-                    ProductId = item.ProductId,
-                    Name = item.Name,
-                    Description = item.Description,
-                    CurrentPrice = item.CurrentPrice,
-                };
-
-                if (isNew)
-                {
-                    var createdProduct = await ProductsService.CreateProducts(dto);
-                    if (createdProduct != null)
-                    {
-                        NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Success,
-                            Summary = "Éxito",
-                            Detail = "Producto creado correctamente",
-                            Duration = 4000
-                        });
-                    }
-                }
-                else
-                {
-                    // Uso PUT para actualizar completamente el producto
-                    var response = await ProductsService.ReplaceProducts(item.ProductId, dto);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Success,
-                            Summary = "Éxito",
-                            Detail = "Producto actualizado correctamente",
-                            Duration = 4000
-                        });
-                    }
-                    else
-                    {
-                        var errorContent = await response.Content.ReadAsStringAsync();
-                        NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = NotificationSeverity.Error,
-                            Summary = "Error al actualizar",
-                            Detail = $"No se pudo actualizar el producto. Código: {response.StatusCode}",
-                            Duration = 6000
-                        });
-                        Console.WriteLine($"Error: {errorContent}");
-                        return; // No cierro el formulario si hay error
-                    }
-                }
-
-                showForm = false;
-                await grid.Reload(); // Recargo la tabla para mostrar los cambios
-            }
-            catch (Exception ex)
-            {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Error",
-                    Detail = $"Error al guardar: {ex.Message}",
-                    Duration = 6000
-                });
-                Console.WriteLine($"Error al guardar: {ex.Message}");
+                await grid.Reload();
             }
         }
 
@@ -181,17 +113,14 @@ namespace InvoicingSystem.Client.Pages
                         Duration = 4000
                     });
                     await grid.Reload();
-                    StateHasChanged();
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
                 {
-                    // Error 409 Conflict - restricción de clave foránea
-                    var errorContent = await response.Content.ReadAsStringAsync();
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Error,
                         Summary = "No se puede eliminar",
-                        Detail = "No se puede eliminar este producto porque está siendo utilizado en una o más facturas.",
+                        Detail = "No se puede eliminar este producto porque está siendo utilizado en facturas.",
                         Duration = 6000
                     });
                 }
@@ -229,4 +158,3 @@ namespace InvoicingSystem.Client.Pages
         }
     }
 }
-

@@ -217,8 +217,25 @@ namespace InvoicingSystem.Server.Services
                     // Columna Derecha: Totales
                     row.RelativeItem().Column(totales =>
                     {
+                        // Calculo base imponible total
                         var totalBase = Invoice.Lines?.Sum(l => l.TotalLine) ?? 0;
-                        var totalIva = totalBase * 0.21m; // IVA 21%
+
+                        // Agrupo líneas por TaxRate para calcular IVA de cada tipo
+                        var ivaGroups = Invoice.Lines?
+                            .Where(l => l.TaxRate != null)
+                            .GroupBy(l => new { l.TaxRate!.Percentage, l.TaxRate.Name })
+                            .Select(g => new
+                            {
+                                TaxName = g.Key.Name,
+                                TaxPercentage = g.Key.Percentage,
+                                BaseImponible = g.Sum(l => l.TotalLine),
+                                TotalIva = g.Sum(l => l.TotalLine * (g.Key.Percentage / 100))
+                            })
+                            .OrderByDescending(g => g.TaxPercentage)
+                            .ToList();
+
+                        // Total IVA sumando todos los tipos
+                        var totalIva = ivaGroups?.Sum(g => g.TotalIva) ?? 0;
                         var totalFinal = totalBase + totalIva;
 
                         totales.Item().Table(t =>
@@ -229,12 +246,21 @@ namespace InvoicingSystem.Server.Services
                                 c.ConstantColumn(80);
                             });
 
+                            // Base imponible total
                             t.Cell().Scale(scale).Text("Total (Base imp).");
                             t.Cell().Scale(scale).AlignRight().Text($"{totalBase:N2}");
 
-                            t.Cell().Scale(scale).Background(extraLightGray).Text("Total IVA 21%");
-                            t.Cell().Scale(scale).Background(extraLightGray).AlignRight().Text($"{totalIva:N2}");
+                            // IVA desglosado por tipo
+                            if (ivaGroups != null)
+                            {
+                                foreach (var ivaGroup in ivaGroups)
+                                {
+                                    t.Cell().Scale(scale).Background(extraLightGray).Text($"Total IVA {ivaGroup.TaxPercentage:N2}%");
+                                    t.Cell().Scale(scale).Background(extraLightGray).AlignRight().Text($"{ivaGroup.TotalIva:N2}");
+                                }
+                            }
 
+                            // Total final
                             t.Cell().Scale(scale).Background(lightGray).Text("Total").FontColor(navyDark);
                             t.Cell().Scale(scale).Background(lightGray).AlignRight().Text($"{totalFinal:N2}").FontColor(navyDark);
                         });

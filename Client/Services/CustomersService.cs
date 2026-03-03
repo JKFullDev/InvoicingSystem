@@ -19,10 +19,14 @@ namespace InvoicingSystem.Client.Services
         }
 
         #region GET
-        public async Task<Radzen.ODataServiceResult<Customers>?> GetCustomers(Query query)
+        public async Task<Radzen.ODataServiceResult<Customers>?> GetCustomers(Query? query)
         {
             var uri = new Uri(baseUri, "Customers");
-            uri = Radzen.ODataExtensions.GetODataUri(uri: uri, filter: $"{query.Filter}", top: query.Top, skip: query.Skip, orderby: $"{query.OrderBy}", count: query.Top != null && query.Skip != null);
+
+            // Evito errores si no me pasan filtros
+            query ??= new Query();
+
+            uri = Radzen.ODataExtensions.GetODataUri(uri: uri, filter: query.Filter, top: query.Top, skip: query.Skip, orderby: query.OrderBy, count: query.Top != null && query.Skip != null);
 
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
             var response = await httpClient.SendAsync(httpRequestMessage);

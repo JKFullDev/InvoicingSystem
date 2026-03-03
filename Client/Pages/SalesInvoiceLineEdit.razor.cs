@@ -16,6 +16,7 @@ namespace InvoicingSystem.Client.Pages
         [Parameter] public SalesInvoiceLines? Line { get; set; }
         [Parameter] public IEnumerable<Products>? Products { get; set; }
         [Parameter] public IEnumerable<TaxRates>? TaxRates { get; set; }
+        [Parameter] public EventCallback<SalesInvoiceLines?> OnClose { get; set; }  // Callback para cerrar sidebar
 
         private SalesInvoiceLines line = new()
         {
@@ -32,7 +33,7 @@ namespace InvoicingSystem.Client.Pages
         {
             if (!IsNew && Line != null)
             {
-                // Clono la línea para editarla
+                // Hago una copia para editarla
                 line = new SalesInvoiceLines
                 {
                     SalesInvoiceLineId = Line.SalesInvoiceLineId,
@@ -46,13 +47,13 @@ namespace InvoicingSystem.Client.Pages
             }
             else
             {
-                // Nueva línea
+                // Inicializo una nueva línea
                 line = new SalesInvoiceLines
                 {
                     SalesInvoiceLineId = Guid.NewGuid(),
                     SalesInvoiceHeaderId = "",
-                    ProductId = null,  // null para floating label
-                    TaxRateId = null,  // null para floating label
+                    ProductId = null,
+                    TaxRateId = null,
                     UnitPrice = 0,
                     Quantity = 1,
                     CustomDescription = ""
@@ -67,13 +68,13 @@ namespace InvoicingSystem.Client.Pages
                 var selectedProduct = Products.FirstOrDefault(p => p.ProductId == guidId);
                 if (selectedProduct != null)
                 {
-                    // Copio el precio actual del producto
+                    // Relleno el precio del producto seleccionado
                     line.UnitPrice = selectedProduct.CurrentPrice;
                 }
             }
         }
 
-        // Versión async para usar con @bind-Value:after
+        // Versión para @bind-Value:after
         private Task OnProductChangedAsync()
         {
             if (Products != null)
@@ -81,16 +82,16 @@ namespace InvoicingSystem.Client.Pages
                 var selectedProduct = Products.FirstOrDefault(p => p.ProductId == line.ProductId);
                 if (selectedProduct != null)
                 {
-                    // Copio el precio actual del producto
+                    // Relleno el precio del producto seleccionado
                     line.UnitPrice = selectedProduct.CurrentPrice;
                 }
             }
             return Task.CompletedTask;
         }
 
-        private void Save()
+        private async Task Save()
         {
-            // Valido
+            // Valido que haya producto
             if (line.ProductId == null || line.ProductId == Guid.Empty)
             {
                 NotificationService.Notify(new NotificationMessage
@@ -127,14 +128,28 @@ namespace InvoicingSystem.Client.Pages
                 return;
             }
 
-            // Cierro el diálogo y devuelvo la línea
-            DialogService.Close(line);
+            // Cierro usando callback o diálogo
+            if (OnClose.HasDelegate)
+            {
+                await OnClose.InvokeAsync(line);  // Sidebar
+            }
+            else
+            {
+                DialogService.Close(line);  // Fallback para modal
+            }
         }
 
-        private void Cancel()
+        private async Task Cancel()
         {
-            // Cierro el diálogo sin guardar
-            DialogService.Close(null);
+            // Cierro sin guardar
+            if (OnClose.HasDelegate)
+            {
+                await OnClose.InvokeAsync(null);  // Sidebar
+            }
+            else
+            {
+                DialogService.Close(null);  // Fallback para modal
+            }
         }
     }
 }

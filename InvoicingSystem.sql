@@ -34,7 +34,7 @@ CREATE TABLE Customers (
 CREATE TABLE Products (
     ProductId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
     Name NVARCHAR(200) NOT NULL,
-    Description NVARCHAR(MAX) NOT NULL, -- Corregido para coincidir con [Required]
+    Description NVARCHAR(MAX) NOT NULL, 
     CurrentPrice DECIMAL(18, 2) NOT NULL
 );
 
@@ -70,50 +70,136 @@ CREATE TABLE SalesInvoiceLines (
 );
 GO
 
--- 2. INSERCIÓN DE DATOS VARIADOS
+SET NOCOUNT ON;
 
--- Tipos de IVA
-DECLARE @IVA21 UNIQUEIDENTIFIER = NEWID(), @IVA10 UNIQUEIDENTIFIER = NEWID(), @IVA04 UNIQUEIDENTIFIER = NEWID(), @IVA00 UNIQUEIDENTIFIER = NEWID();
-INSERT INTO TaxRates (TaxRateId, Name, Percentage) VALUES 
-(@IVA21, 'IVA 21%', 21.00), (@IVA10, 'IVA 10%', 10.00), (@IVA04, 'IVA 4%', 4.00), (@IVA00, 'IVA Exento', 0.00);
+PRINT '1. LIMPIANDO TABLAS (Sin borrar la DB)...';
+ALTER TABLE SalesInvoiceLines NOCHECK CONSTRAINT ALL;
+ALTER TABLE SalesInvoiceHeaders NOCHECK CONSTRAINT ALL;
+
+DELETE FROM SalesInvoiceLines;
+DELETE FROM SalesInvoiceHeaders;
+DELETE FROM Customers;
+DELETE FROM Products;
+DELETE FROM TaxRates;
+DELETE FROM PaymentTerms;
+
+-- Reactivamos restricciones
+ALTER TABLE SalesInvoiceLines CHECK CONSTRAINT ALL;
+ALTER TABLE SalesInvoiceHeaders CHECK CONSTRAINT ALL;
+GO
+
+PRINT '2. INSERTANDO DATOS MAESTROS (Esenciales para que no falle)...';
+
+-- Tipos de IVA (Guardamos IDs en variables tabla para usarlos luego)
+DECLARE @TaxMap TABLE (Id UNIQUEIDENTIFIER, Pct DECIMAL(5,2));
+INSERT INTO TaxRates (TaxRateId, Name, Percentage) 
+OUTPUT Inserted.TaxRateId, Inserted.Percentage INTO @TaxMap
+VALUES 
+(NEWID(), 'IVA 21%', 21.00), 
+(NEWID(), 'IVA 10%', 10.00), 
+(NEWID(), 'IVA 4%', 4.00), 
+(NEWID(), 'Exento', 0.00);
 
 -- Condiciones de Pago
-DECLARE @P30 UNIQUEIDENTIFIER = NEWID(), @P60 UNIQUEIDENTIFIER = NEWID(), @P90 UNIQUEIDENTIFIER = NEWID();
-INSERT INTO PaymentTerms (PaymentTermsId, Description, PaymentDays) VALUES 
-(@P30, 'Confirming 30 dias', 30), (@P60, 'Confirming 60 dias', 60),(@P90, 'Confirming 90 días', 90);
+DECLARE @PayMap TABLE (Id UNIQUEIDENTIFIER, Days INT);
+INSERT INTO PaymentTerms (PaymentTermsId, Description, PaymentDays) 
+OUTPUT Inserted.PaymentTermsId, Inserted.PaymentDays INTO @PayMap
+VALUES 
+(NEWID(), 'Contado', 0), 
+(NEWID(), 'Giro 30 días', 30), 
+(NEWID(), 'Giro 60 días', 60);
 
--- Clientes
-INSERT INTO Customers (CustomerId, Name, Address, City, Nif) VALUES 
-('CU2002-00182', 'SOCIEDAD MERCANTIL ESTATAL AGUAS DE LAS CUENCAS DE ESPAÑA', 'Calle Agustín de Betancourt, 25', 'Madrid', 'A50736784'),
-('CU2026-00001', 'HARDWARE & SOFTWARE SOLUTIONS S.L.', 'Avenida de la Innovación, 12', 'Leganés', 'B88776655'),
-('CU2026-00002', 'GLOBAL TECH RETAIL', 'Gran Vía 45', 'Madrid', 'B11223344');
+PRINT '3. GENERANDO 50 CLIENTES...';
+DECLARE @i INT = 1;
+WHILE @i <= 50
+BEGIN
+    DECLARE @CId NVARCHAR(50) = 'CL-' + RIGHT('0000' + CAST(@i AS VARCHAR(10)), 4);
+    
+    INSERT INTO Customers (CustomerId, Name, Address, City, Nif)
+    VALUES (
+        @CId,
+        'Empresa ' + CAST(@i AS VARCHAR(10)) + ' ' + CHAR(65 + (@i % 26)) + 'L', 
+        'Calle Falsa ' + CAST(ABS(CHECKSUM(NEWID()) % 100) AS VARCHAR(10)),
+        CASE ABS(CHECKSUM(NEWID()) % 4) 
+            WHEN 0 THEN 'Madrid' WHEN 1 THEN 'Barcelona' WHEN 2 THEN 'Valencia' ELSE 'Sevilla' 
+        END,
+        'B' + RIGHT('00000000' + CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR(20)), 8)
+    );
+    SET @i = @i + 1;
+END
 
--- Productos
-DECLARE @Prod1 UNIQUEIDENTIFIER = NEWID(), @Prod2 UNIQUEIDENTIFIER = NEWID(), @Prod3 UNIQUEIDENTIFIER = NEWID(), @Prod4 UNIQUEIDENTIFIER = NEWID(), @Prod5 UNIQUEIDENTIFIER = NEWID();
-INSERT INTO Products (ProductId, Name, Description, CurrentPrice) VALUES 
-(@Prod1, 'IMPRESORA CANON MAXIFY BX110', 'Inyección de tinta profesional', 250.00),
-(@Prod2, 'ORDENADOR HP ELITEDESK', 'Intel i7, 16GB RAM', 675.00),
-(@Prod3, 'SERVIDOR DELL POWEREDGE', 'Xeon 12-Core, 32GB RAM', 3200.00),
-(@Prod4, 'LICENCIA WINDOWS SERVER 2022', 'Licencia OEM standard', 450.00),
-(@Prod5, 'HORA CONSULTORÍA IT', 'Soporte técnico avanzado', 65.00);
+PRINT '4. GENERANDO 50 PRODUCTOS...';
+SET @i = 1;
+WHILE @i <= 50
+BEGIN
+    INSERT INTO Products (ProductId, Name, Description, CurrentPrice)
+    VALUES (
+        NEWID(),
+        'Producto IT ' + CAST(@i AS VARCHAR(10)),
+        'Descripción autogenerada del producto ' + CAST(@i AS VARCHAR(10)),
+        CAST((ABS(CHECKSUM(NEWID()) % 10000) / 10.0) + 10 AS DECIMAL(18,2))
+    );
+    SET @i = @i + 1;
+END
 
--- FACTURA A (La del PDF original)
-INSERT INTO SalesInvoiceHeaders VALUES ('FA2602-2151', 'Impresora Canon MAXIFY', '2026-02-16', '2026-04-17', 'PR2602-2258', 'CU2002-00182', @P60);
-INSERT INTO SalesInvoiceLines (SalesInvoiceHeaderId, ProductId, TaxRateId, UnitPrice, Quantity, CustomDescription) VALUES 
-('FA2602-2151', @Prod1, @IVA21, 250.00, 1, '• S/N: 917069C02692AB21AHLX00737'),
-('FA2602-2151', @Prod2, @IVA21, 675.00, 2, '• Color Gris' + CHAR(13) + '• Instalación incluida');
+PRINT '5. GENERANDO 500 FACTURAS (Esto tardará unos segundos)...';
+SET @i = 1;
 
--- FACTURA B (Servicios y Software)
-INSERT INTO SalesInvoiceHeaders VALUES ('FA2602-2152', 'Proyecto Migración Cloud', '2026-02-20', '2026-03-22', 'PR2602-9999', 'CU2026-00001', @P30);
-INSERT INTO SalesInvoiceLines (SalesInvoiceHeaderId, ProductId, TaxRateId, UnitPrice, Quantity, CustomDescription) VALUES 
-('FA2602-2152', @Prod4, @IVA21, 450.00, 1, '• Clave de activación por email'),
-('FA2602-2152', @Prod5, @IVA21, 65.00, 10, '• Migración de base de datos SQL');
+-- Variables para el bucle
+DECLARE @NewInvoiceId NVARCHAR(50);
+DECLARE @CustId NVARCHAR(50);
+DECLARE @PayTermId UNIQUEIDENTIFIER;
+DECLARE @PayDays INT;
+DECLARE @InvDate DATE;
+DECLARE @ProdId UNIQUEIDENTIFIER;
+DECLARE @Price DECIMAL(18,2);
+DECLARE @TaxId UNIQUEIDENTIFIER;
 
--- FACTURA C (Gran Volumen - Para probar saltos de página)
-INSERT INTO SalesInvoiceHeaders VALUES ('FA2602-2153', 'Equipamiento Oficina Nueva', '2026-02-25', '2026-06-25', 'PR2602-5555', 'CU2026-00002', @P90);
-INSERT INTO SalesInvoiceLines (SalesInvoiceHeaderId, ProductId, TaxRateId, UnitPrice, Quantity, CustomDescription) VALUES 
-('FA2602-2153', @Prod3, @IVA21, 3200.00, 2, '• Configuración RAID 10' + CHAR(13) + '• Garantía 5 años ProSupport'),
-('FA2602-2153', @Prod2, @IVA21, 675.00, 5, '• Monitor 24 pulgadas incluido');
+WHILE @i <= 500
+BEGIN
+    -- Datos aleatorios para Cabecera
+    SET @NewInvoiceId = 'F24-' + RIGHT('00000' + CAST(@i AS VARCHAR(10)), 5);
+    
+    SELECT TOP 1 @CustId = CustomerId FROM Customers ORDER BY NEWID();
+    SELECT TOP 1 @PayTermId = Id, @PayDays = Days FROM @PayMap ORDER BY NEWID();
+    
+    SET @InvDate = DATEADD(DAY, -ABS(CHECKSUM(NEWID()) % 365), GETDATE()); -- Fecha aleatoria último año
 
+    -- Insertar Cabecera
+    INSERT INTO SalesInvoiceHeaders (SalesInvoiceHeaderId, CustomerReference, InvoiceDate, DueDate, QuoteReference, CustomerId, PaymentTermsId)
+    VALUES (
+        @NewInvoiceId,
+        'REF-' + CAST(@i AS VARCHAR(10)),
+        @InvDate,
+        DATEADD(DAY, @PayDays, @InvDate), -- Vencimiento calculado
+        'PRE-' + CAST(@i AS VARCHAR(10)),
+        @CustId,
+        @PayTermId
+    );
 
+    -- Insertar Líneas (Entre 1 y 3 líneas por factura)
+    DECLARE @Lines INT = (ABS(CHECKSUM(NEWID())) % 3) + 1;
+    DECLARE @j INT = 1;
+    
+    WHILE @j <= @Lines
+    BEGIN
+        SELECT TOP 1 @ProdId = ProductId, @Price = CurrentPrice FROM Products ORDER BY NEWID();
+        SELECT TOP 1 @TaxId = Id FROM @TaxMap WHERE Pct = 21.00; -- Asumimos IVA 21 por defecto para simplificar
 
+        INSERT INTO SalesInvoiceLines (SalesInvoiceHeaderId, ProductId, TaxRateId, UnitPrice, Quantity, CustomDescription)
+        VALUES (
+            @NewInvoiceId,
+            @ProdId,
+            @TaxId,
+            @Price,
+            (ABS(CHECKSUM(NEWID())) % 5) + 1,
+            'Linea generada automáticamente'
+        );
+        SET @j = @j + 1;
+    END
+
+    SET @i = @i + 1;
+END
+
+PRINT '¡PROCESO COMPLETADO SIN ERRORES!';
+GO

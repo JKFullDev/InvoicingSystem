@@ -1,6 +1,5 @@
-﻿using InvoicingSystem.Client.Interfaces;
+using InvoicingSystem.Client.Interfaces;
 using InvoicingSystem.Server.Data.Models;
-using InvoicingSystem.Server.Data.Models.DTOs;
 using Microsoft.AspNetCore.Components;
 using Radzen;
 using Radzen.Blazor;
@@ -10,25 +9,44 @@ using System.Threading.Tasks;
 
 namespace InvoicingSystem.Client.Pages
 {
-    public partial class PaymentTermsList : ComponentBase
+    public partial class PaymentTermList : ComponentBase
     {
         [Inject] protected IPaymentTermsService PaymentTermsService { get; set; } = default!;
         [Inject] protected NotificationService NotificationService { get; set; } = default!;
+        [Inject] protected DialogService DialogService { get; set; } = default!;
 
-        // Variables de la tabla
         protected RadzenDataGrid<PaymentTerms> grid = default!;
         protected IEnumerable<PaymentTerms>? paymentTerms;
         protected int count;
-        protected bool isLoading = false;
+        protected bool isLoading = true;
+        private bool _firstRender = true;
 
-        // Variables del formulario Maestro-Detalle
-        protected bool showForm = false;
-        protected bool isNew = false;
-        protected PaymentTerms paymentTermsToEdit = new PaymentTerms { Description = "" };
+        private bool sidebarExpanded = false;
+        private string sidebarTitle = "";
+        private bool isNewPaymentTerm = true;
+        private Guid? selectedPaymentTermId = null;
 
         protected override async Task OnInitializedAsync()
         {
+            paymentTerms = new List<PaymentTerms>
+            {
+                new PaymentTerms { PaymentTermsId = Guid.Empty, Description = "", PaymentDays = -1 },
+                new PaymentTerms { PaymentTermsId = Guid.Empty, Description = "", PaymentDays = -1 },
+                new PaymentTerms { PaymentTermsId = Guid.Empty, Description = "", PaymentDays = -1 },
+                new PaymentTerms { PaymentTermsId = Guid.Empty, Description = "", PaymentDays = -1 },
+                new PaymentTerms { PaymentTermsId = Guid.Empty, Description = "", PaymentDays = -1 }
+            };
             await InvokeAsync(StateHasChanged);
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender && _firstRender)
+            {
+                _firstRender = false;
+                await Task.Delay(200);
+                await grid.Reload();
+            }
         }
 
         protected async Task LoadData(LoadDataArgs args)
@@ -53,69 +71,37 @@ namespace InvoicingSystem.Client.Pages
 
         protected void GoToAdd()
         {
-            isNew = true;
-            paymentTermsToEdit = new PaymentTerms { Description = "" }; // Vaciamos el formulario
-            showForm = true;
+            sidebarTitle = "Nuevo Término de Pago";
+            isNewPaymentTerm = true;
+            selectedPaymentTermId = null;
+            sidebarExpanded = true;
         }
 
         protected void OnRowDoubleClick(DataGridRowMouseEventArgs<PaymentTerms> args)
         {
             if (args.Data == null) return;
 
-            isNew = false;
-
-            // Clonamos asegurando que si algún campo es null, se ponga como cadena vacía
-            paymentTermsToEdit = new PaymentTerms
-            {
-                PaymentTermsId = args.Data.PaymentTermsId,
-                Description = args.Data.Description ?? "",
-                PaymentDays = args.Data.PaymentDays
-            };
-
-            showForm = true;
+            sidebarTitle = $"Editar: {args.Data.Description}";
+            isNewPaymentTerm = false;
+            selectedPaymentTermId = args.Data.PaymentTermsId;
+            sidebarExpanded = true;
         }
 
-        protected void CancelEdit()
+        private async Task CloseSidebar(bool reload = false)
         {
-            showForm = false;
-        }
+            sidebarExpanded = false;
 
-        protected async Task SavePaymentTerms()
-        {
-            try
+            if (reload)
             {
-                // Mapeamos a tu DTO para enviarlo al servidor
-                var dto = new PaymentTermsDTO
-                {
-                    PaymentTermsId = paymentTermsToEdit.PaymentTermsId,
-                    Description = paymentTermsToEdit.Description,
-                    PaymentDays = paymentTermsToEdit.PaymentDays,
-                };
-
-                if (isNew)
-                {
-                    await PaymentTermsService.CreatePaymentTerms(dto);
-                }
-                else
-                {
-                    // Usamos tu método ReplacePaymentTerms (PUT)
-                    await PaymentTermsService.ReplacePaymentTerms(paymentTermsToEdit.PaymentTermsId, dto);
-                }
-
-                showForm = false;
-                await grid.Reload(); // Esto lanza LoadData automáticamente y refresca la vista
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error al guardar: {ex.Message}");
+                await grid.Reload();
             }
         }
 
-        protected async Task DeletePaymentTerms(Guid paymentTermsId)
+        protected async Task DeletePaymentTerm(Guid paymentTermId)
         {
             try
             {
-                var response = await PaymentTermsService.DeletePaymentTerms(paymentTermsId);
+                var response = await PaymentTermsService.DeletePaymentTerms(paymentTermId);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -134,7 +120,7 @@ namespace InvoicingSystem.Client.Pages
                     {
                         Severity = NotificationSeverity.Error,
                         Summary = "No se puede eliminar",
-                        Detail = "No se puede eliminar este término de pago porque está siendo utilizado en una o más facturas.",
+                        Detail = "No se puede eliminar este término porque está siendo utilizado en facturas.",
                         Duration = 6000
                     });
                 }

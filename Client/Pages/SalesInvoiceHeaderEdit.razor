@@ -27,11 +27,11 @@
                 @if (IsNew)
                 {
                     <RadzenColumn Size="6">
-                        <RadzenFormField Text="ID Factura" Variant="Variant.Outlined" Style="width:100%">
+                        <RadzenFormField Text="ID Factura" Variant="Variant.Outlined" class="form-field-full">
                             <RadzenTextBox @bind-Value="invoice.SalesInvoiceHeaderId"
                                            Name="SalesInvoiceHeaderId"
                                            Placeholder="Ej: FA2602-2151"
-                                           Style="width: 100%;" />
+                                           class="input-full" />
                         </RadzenFormField>
                         <RadzenRequiredValidator Component="SalesInvoiceHeaderId" Text="El ID es obligatorio" />
                     </RadzenColumn>
@@ -39,71 +39,71 @@
                 else
                 {
                     <RadzenColumn Size="6">
-                        <RadzenFormField Text="ID Factura" Variant="Variant.Outlined" Style="width:100%">
+                        <RadzenFormField Text="ID Factura" Variant="Variant.Outlined" class="form-field-full">
                             <RadzenTextBox Value="@invoice.SalesInvoiceHeaderId"
                                            Disabled="true"
-                                           Style="width: 100%; background-color: #f3f4f6;" />
+                                           class="input-full input-disabled" />
                         </RadzenFormField>
                     </RadzenColumn>
                 }
 
                 @* Cliente *@
                 <RadzenColumn Size="6">
-                    <RadzenFormField Text="Cliente" Variant="Variant.Outlined" AllowFloatingLabel="true" Style="width:100%">
+                    <RadzenFormField Text="Cliente" Variant="Variant.Outlined" class="form-field-full">
                         <RadzenDropDownDataGrid @bind-Value="invoice.CustomerId"
                                         Data="@customers"
                                         TextProperty="Name"
                                         ValueProperty="CustomerId"
                                         Name="CustomerId"
                                         Variant="Variant.Outlined"
-                                        Style="width: 100%;" />
+                                        class="input-full" />
                     </RadzenFormField>
                     <RadzenRequiredValidator Component="CustomerId" Text="Debe seleccionar un cliente" />
                 </RadzenColumn>
             </RadzenRow>
 
             @*SEGUNDA FILA*@
-            <RadzenRow Gap="1rem" Style="margin-top: 1rem;">
+            <RadzenRow Gap="1rem" class="row-spacing">
                 @* Referencia Presupuesto *@
                 <RadzenColumn Size="6">
-                    <RadzenFormField Text="Referencia Presupuesto" Variant="Variant.Outlined" Style="width:100%">
+                    <RadzenFormField Text="Referencia Presupuesto" Variant="Variant.Outlined" class="form-field-full">
                         <RadzenTextBox @bind-Value="invoice.QuoteReference"
                                        Name="QuoteReference"
                                        Placeholder="Ej: PR2602-2258"
-                                       Style="width: 100%;" />
+                                       class="input-full" />
                     </RadzenFormField>
                     <RadzenRequiredValidator Component="QuoteReference" Text="La referencia del presupuesto es obligatoria" />
                 </RadzenColumn>
 
                 @* Referencia Cliente *@
                 <RadzenColumn Size="6">
-                    <RadzenFormField Text="Referencia Cliente" Variant="Variant.Outlined" Style="width:100%">
+                    <RadzenFormField Text="Referencia Cliente" Variant="Variant.Outlined" class="form-field-full">
                         <RadzenTextBox @bind-Value="invoice.CustomerReference"
                                        Name="CustomerReference"
                                        Placeholder="Ej: Proyecto migración cloud"
-                                       Style="width: 100%;" />
+                                       class="input-full" />
                     </RadzenFormField>
                     <RadzenRequiredValidator Component="CustomerReference" Text="La referencia es obligatoria" />
                 </RadzenColumn>
             </RadzenRow>
 
             @*TERCERA FILA*@
-            <RadzenRow Gap="1rem" Style="margin-top: 1rem;">
+            <RadzenRow Gap="1rem" class="row-spacing">
                 @* Fecha Emisión *@
                 <RadzenColumn Size="4">
-                    <RadzenFormField Text="Fecha Emisión" Variant="Variant.Outlined" Style="width:100%">
+                    <RadzenFormField Text="Fecha Emisión" Variant="Variant.Outlined" class="form-field-full">
                         <RadzenDatePicker @bind-Value="invoice.InvoiceDate"
                                           Name="InvoiceDate"
                                           DateFormat="dd/MM/yyyy"
                                           Change="@OnInvoiceDateChanged"
-                                          Style="width: 100%;" />
+                                          class="input-full" />
                     </RadzenFormField>
                     <RadzenRequiredValidator Component="InvoiceDate" Text="La fecha de emisión es obligatoria" />
                 </RadzenColumn>
 
                 @* Condiciones de Pago *@
                 <RadzenColumn Size="4">
-                    <RadzenFormField Text="Condiciones de Pago" Variant="Variant.Outlined" AllowFloatingLabel="true" Style="width:100%">
+                    <RadzenFormField Text="Condiciones de Pago" Variant="Variant.Outlined" class="form-field-full">
                         <RadzenDropDownDataGrid @bind-Value="invoice.PaymentTermsId"
                                         @bind-Value:after="OnPaymentTermChangedAsync"
                                         Data="@paymentTerms"
@@ -111,25 +111,25 @@
                                         ValueProperty="PaymentTermsId"
                                         Name="PaymentTermsId"
                                         Variant="Variant.Outlined"
-                                        Style="width: 100%;" />
+                                        class="input-full" />
                     </RadzenFormField>
                     <RadzenRequiredValidator Component="PaymentTermsId" Text="Debe seleccionar las condiciones de pago" />
                 </RadzenColumn>
 
                 @* Fecha Vencimiento *@
                 <RadzenColumn Size="4">
-                    <RadzenFormField Text="Fecha Vencimiento" Variant="Variant.Outlined" Style="width:100%">
+                    <RadzenFormField Text="Fecha Vencimiento" Variant="Variant.Outlined" class="form-field-full">
                         <RadzenDatePicker TValue="DateTime"
                                           Value="@invoice.DueDate"
                                           DateFormat="dd/MM/yyyy"
                                           Disabled="true"
-                                          Style="width: 100%; background-color: #f3f4f6;" />
+                                          class="input-full input-disabled" />
                     </RadzenFormField>
                 </RadzenColumn>
             </RadzenRow>
 
             @* Líneas de factura *@
-            <RadzenRow Gap="1rem" Style="margin-top: 2rem;">
+            <RadzenRow Gap="1rem" class="row-spacing-large">
                 <RadzenColumn Size="12">
                     <RadzenFieldset Text="Líneas de Factura">
                         <RadzenButton Text="Añadir Línea"
@@ -137,7 +137,7 @@
                                       ButtonStyle="ButtonStyle.Success"
                                       Size="ButtonSize.Small"
                                       Click="@AddLine"
-                                      Style="margin-bottom: 1rem;" />
+                                      class="btn-add-line" />
 
                         @if (invoiceLines.Any())
                         {
@@ -179,13 +179,13 @@
                                 </Columns>
                             </RadzenDataGrid>
 
-                            <div style="text-align: right; font-weight: bold; margin-top: 1rem;">
+                            <div class="invoice-total">
                                 TOTAL: @CalculateTotal().ToString("C2")
                             </div>
                         }
                         else
                         {
-                            <p style="text-align: center; color: #6b7280; padding: 2rem;">
+                            <p class="empty-lines-message">
                                 No hay líneas añadidas. Haz clic en "Añadir Línea" para comenzar.
                             </p>
                         }
@@ -194,12 +194,12 @@
             </RadzenRow>
 
             @* Botones *@
-            <RadzenRow Gap="1rem" Style="margin-top: 2rem;">
-                <RadzenColumn Size="12" Style="text-align: right;">
+            <RadzenRow Gap="1rem" class="row-spacing-large">
+                <RadzenColumn Size="12" class="text-right">
                     <RadzenButton Text="Cancelar"
                                   ButtonStyle="ButtonStyle.Light"
                                   Click="@Cancel"
-                                  Style="margin-right: 0.5rem;" />
+                                  class="btn-cancel" />
                     <RadzenButton Text="Guardar"
                                   ButtonType="ButtonType.Submit"
                                   ButtonStyle="ButtonStyle.Primary"
@@ -209,3 +209,143 @@
         </RadzenTemplateForm>
     }
 </RadzenStack>
+
+@* Sidebar deslizante desde la IZQUIERDA para editar/crear líneas *@
+@if (lineSidebarExpanded)
+{
+    <div class="sidebar-overlay" @onclick="@(() => CloseLineSidebar(null))"></div>
+
+    <div class="sidebar-panel sidebar-left">
+        <div class="sidebar-header">
+            <h2 class="sidebar-title">@lineSidebarTitle</h2>
+            <RadzenButton Icon="close" 
+                          ButtonStyle="ButtonStyle.Light" 
+                          Variant="Variant.Flat"
+                          Size="ButtonSize.Small"
+                          Click="@(() => CloseLineSidebar(null))" />
+        </div>
+
+        <div class="sidebar-content">
+            <SalesInvoiceLineEdit IsNew="@isNewLine" 
+                                 Line="@selectedLine"
+                                 Products="@products"
+                                 TaxRates="@taxRates"
+                                 OnClose="@CloseLineSidebar" />
+        </div>
+    </div>
+}
+
+<style>
+    /* Inputs y FormFields */
+    .form-field-full {
+        width: 100%;
+    }
+
+    .input-full {
+        width: 100%;
+    }
+
+    .input-disabled {
+        background-color: #f3f4f6;
+    }
+
+    /* Espaciado de filas */
+    .row-spacing {
+        margin-top: 1rem;
+    }
+
+    .row-spacing-large {
+        margin-top: 2rem;
+    }
+
+    /* Botones */
+    .btn-add-line {
+        margin-bottom: 1rem;
+    }
+
+    .btn-cancel {
+        margin-right: 0.5rem;
+    }
+
+    /* Total de factura */
+    .invoice-total {
+        text-align: right;
+        font-weight: bold;
+        margin-top: 1rem;
+    }
+
+    /* Mensaje de líneas vacías */
+    .empty-lines-message {
+        text-align: center;
+        color: #6b7280;
+        padding: 2rem;
+    }
+
+    /* Alineación de texto */
+    .text-right {
+        text-align: right;
+    }
+
+    /* Sidebar de líneas - Overlay */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 99998;
+    }
+
+    /* Sidebar de líneas - Panel */
+    .sidebar-panel {
+        position: fixed;
+        top: 0;
+        height: 100vh;
+        background: white;
+        z-index: 99999;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-left {
+        left: 0;
+        width: 50%;
+        max-width: 700px;
+        animation: slideInLeft 0.3s ease-out;
+    }
+
+    /* Header del sidebar */
+    .sidebar-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .sidebar-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    /* Contenido del sidebar */
+    .sidebar-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+    }
+
+    /* Animación del sidebar */
+    @@keyframes slideInLeft {
+        from {
+            transform: translateX(-100%);
+        }
+        to {
+            transform: translateX(0);
+        }
+    }
+</style>

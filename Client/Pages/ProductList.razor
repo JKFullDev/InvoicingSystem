@@ -1,4 +1,4 @@
-﻿@page "/products"
+@page "/products"
 @using InvoicingSystem.Server.Data.Models
 @using Radzen
 @using Radzen.Blazor
@@ -7,151 +7,6 @@
 <PageTitle>Listado de Productos</PageTitle>
 
 <style>
-    /* Overlay de fondo semi-transparente */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: fadeIn 0.3s ease-in-out;
-    }
-
-    /* Contenedor del formulario modal */
-    .modal-content {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        max-width: 600px;
-        width: 90%;
-        max-height: 85vh;
-        overflow-y: auto;
-        animation: slideDown 0.3s ease-in-out;
-    }
-
-    /* Animación de aparición del overlay */
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-
-    /* Animación de deslizamiento del modal */
-    @@keyframes slideDown {
-        from {
-            transform: translateY(-50px);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-
-    /* Espaciado interno del modal */
-    .modal-body {
-        padding: 2.5rem;
-    }
-
-    /* Estilo para el header del modal */
-    .modal-header {
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid #e0e0e0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 12px 12px 0 0;
-    }
-
-    .modal-header h3 {
-        margin: 0;
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: white;
-    }
-
-    /* Botón de cerrar (X) */
-    .modal-close {
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: white;
-        padding: 0;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        transition: all 0.2s;
-    }
-
-    .modal-close:hover {
-        background-color: rgba(255, 255, 255, 0.3);
-        transform: scale(1.1);
-    }
-
-    /* Contenedor centrado para los campos del formulario */
-    .form-field-container {
-        max-width: 500px;
-        margin: 0 auto;
-    }
-
-    /* Estilo para los labels */
-    .form-field-container .rz-label {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 0.5rem;
-        display: block;
-    }
-
-    /* Espaciado entre campos */
-    .form-field {
-        margin-bottom: 1.5rem;
-    }
-
-    /* Estilo para los inputs */
-    .form-field-container .rz-textbox,
-    .form-field-container .rz-numeric {
-        width: 100% !important;
-        border-radius: 6px;
-        border: 1px solid #d1d5db;
-        transition: border-color 0.2s;
-    }
-
-    .form-field-container .rz-textbox:focus,
-    .form-field-container .rz-numeric:focus {
-        border-color: #667eea;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    /* Estilo para el texto de ayuda */
-    .help-text {
-        font-size: 0.875rem;
-        color: #6b7280;
-        margin-top: 0.25rem;
-        display: block;
-    }
-
-    /* Separador visual */
-    .form-divider {
-        border: none;
-        border-top: 1px solid #e5e7eb;
-        margin: 2rem 0;
-    }
-
-    /* Header de la página */
     .page-header {
         display: flex;
         justify-content: space-between;
@@ -168,172 +23,171 @@
         color: #1f2937;
     }
 
-    /* Validación de error */
-    .rz-message {
-        margin-top: 0.25rem;
+    .rz-pagesize-text {
+        display: none;
     }
 
-    /* Alerta de producto facturado */
-    .invoiced-warning {
-        background-color: #fef3c7;
-        border-left: 4px solid #f59e0b;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        border-radius: 6px;
-        display: flex;
-        align-items: start;
-        gap: 0.75rem;
-    }
-
-    .invoiced-warning-icon {
-        color: #f59e0b;
-        font-size: 1.5rem;
-        flex-shrink: 0;
-    }
-
-    .invoiced-warning-content h4 {
-        margin: 0 0 0.25rem 0;
-        font-size: 1rem;
-        font-weight: 600;
-        color: #92400e;
-    }
-
-    .invoiced-warning-content p {
-        margin: 0;
-        font-size: 0.875rem;
-        color: #78350f;
-        line-height: 1.5;
+    @@keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+        }
+        to {
+            transform: translateX(0);
+        }
     }
 </style>
 
 <div class="page-header">
-    <h1>Directorio de Productos</h1>
-    <RadzenButton Text="Añadir Producto" 
-                  Icon="add_circle_outline" 
-                  ButtonStyle="ButtonStyle.Primary" 
-                  Click="@GoToAdd" 
-                  Disabled="@showForm" 
+    <h1>Gestión de Productos</h1>
+    <RadzenButton Text="Añadir Producto"
+                  Icon="add_circle_outline"
+                  ButtonStyle="ButtonStyle.Primary"
+                  Click="@GoToAdd"
                   Size="ButtonSize.Large" />
 </div>
 
-@* FORMULARIO DESPLEGABLE (Añadir/Editar) - MODAL OVERLAY *@
-@if (showForm && productToEdit != null)
-{
-    <div class="modal-overlay" @onclick="@CancelEdit">
-        <div class="modal-content" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <h3>@(isNew ? "Nuevo Producto" : "Editar Producto")</h3>
-                <button class="modal-close" @onclick="@CancelEdit" aria-label="Cerrar">
-                    ✕
-                </button>
-            </div>
-            <div class="modal-body">
-                <RadzenTemplateForm Data="@productToEdit" Submit="@SaveProduct" TItem="Products">
-                    <div class="form-field-container">
-
-                        @* Muestro advertencia si el producto está en facturas *@
-                        @if (!isNew && isProductInvoiced)
-                        {
-                            <div class="invoiced-warning">
-                                <span class="invoiced-warning-icon">⚠️</span>
-                                <div class="invoiced-warning-content">
-                                    <h4>Producto facturado</h4>
-                                    <p>
-                                        Este producto aparece en <strong>@invoiceCount factura@(invoiceCount > 1 ? "s" : "")</strong>.
-                                        Puedes modificar su precio actual, pero las facturas existentes conservarán el precio original.
-                                    </p>
-                                </div>
-                            </div>
-                        }
-
-                        @* Campo ID no se muestra porque es Guid generado automáticamente *@
-
-                        @* Campo Nombre *@
-                        <div class="form-field">
-                            <RadzenLabel Text="Nombre *" />
-                            <RadzenTextBox @bind-Value="productToEdit.Name" 
-                                          Name="Name" 
-                                          Placeholder="Ej: Portatil Dell..." 
-                                          MaxLength="200" />
-                            <RadzenRequiredValidator Component="Name" 
-                                                    Text="El nombre es obligatorio" 
-                                                    Style="display: block" />
-                        </div>
-                        @* Campo Descripción *@
-                        <div class="form-field">
-                            <RadzenLabel Text="Descripción *" />
-                            <RadzenTextBox @bind-Value="productToEdit.Description" 
-                                          Name="Description" 
-                                          Placeholder="Ej: Intel Core I5, Gris..." 
-                                          MaxLength="100" />
-                            <RadzenRequiredValidator Component="Description" 
-                                                    Text="La descripción es obligatoria" 
-                                                    Style="display: block" />
-                        </div>
-
-                        @* Campo Precio actual *@
-                        <div class="form-field">
-                            <RadzenLabel Text="Precio Actual (€) *" />
-                            <RadzenNumeric @bind-Value="productToEdit.CurrentPrice" 
-                                          Name="CurrentPrice" 
-                                          ShowUpDown="false" 
-                                          Min="0" 
-                                          Max="999999.99m"
-                                          Format="c2"
-                                          Placeholder="0.00" />
-                            <small class="help-text">Precio en euros (máximo 999,999.99€)</small>
-                            <RadzenRequiredValidator Component="CurrentPrice" 
-                                                    Text="El precio es obligatorio" 
-                                                    Style="display: block" />
-                        </div>
-
-                        <hr class="form-divider" />
-
-                        @* Botones de acción *@
-                        <div class="d-flex justify-content-end gap-2">
-                            <RadzenButton Text="Cancelar" 
-                                        ButtonStyle="ButtonStyle.Light" 
-                                        Click="@CancelEdit" 
-                                        Size="ButtonSize.Medium" 
-                                        Style="min-width: 100px;" />
-                            <RadzenButton Text="Guardar" 
-                                        ButtonType="ButtonType.Submit" 
-                                        ButtonStyle="ButtonStyle.Primary" 
-                                        Icon="save" 
-                                        Size="ButtonSize.Medium" 
-                                        Style="min-width: 100px;" />
-                        </div>
-                    </div>
-                </RadzenTemplateForm>
-            </div>
-        </div>
-    </div>
-}
-
-@* TABLA PRINCIPAL *@
 <div class="row">
     <div class="col-md-12">
         <RadzenDataGrid @ref="grid" Data="@products" Count="@count" TItem="Products" LoadData="@LoadData"
-                        AllowFiltering="true" AllowPaging="true" AllowSorting="true" PageSize="10"
-                        IsLoading="@isLoading" RowDoubleClick="@OnRowDoubleClick">
+                        AllowFiltering="true" AllowPaging="true" AllowSorting="true"
+                        PageSize="10"
+                        PageSizeOptions="@(new int[] { 5, 10, 20, 50 })"
+                        ShowPagingSummary="true"
+                        PagingSummaryFormat="Mostrando {0}-{1} de {2} productos"
+                        IsLoading="@isLoading"
+                        RowDoubleClick="@OnRowDoubleClick"
+                        Style="max-height:397.6px">
             <Columns>
-                <RadzenDataGridColumn TItem="Products" Property="Name" Title="Nombre" Width="30%" />
-                <RadzenDataGridColumn TItem="Products" Property="Description" Title="Descripción" Width="30%" />
-
-                @* Columna de precio con formato usando Template *@
-                <RadzenDataGridColumn TItem="Products" Property="CurrentPrice" Title="Precio Actual" Width="20%">
+                <RadzenDataGridColumn TItem="Products" Property="Name" Title="Nombre" Width="200px">
                     <Template Context="product">
-                        @product.CurrentPrice.ToString("C2")
+                        @if (string.IsNullOrEmpty(product.Name))
+                        {
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            @product.Name
+                        }
                     </Template>
                 </RadzenDataGridColumn>
 
-                @* Columna solo para el botón de borrar *@
-                <RadzenDataGridColumn TItem="Products" Context="product" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="10%">
+                <RadzenDataGridColumn TItem="Products" Property="Description" Title="Descripción" Width="300px"> 
                     <Template Context="product">
-                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(() => DeleteProduct(product.ProductId))" @onclick:stopPropagation="true" />
+                        @if (string.IsNullOrEmpty(product.Description))
+                        {
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-12"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            @product.Description
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="Products" Property="CurrentPrice" Title="Precio" Width="120px">
+                    <Template Context="product">
+                        @if (product.CurrentPrice < 0)
+                        {
+                            <div class="placeholder-glow">
+                                <span class="placeholder col-8"></span>
+                            </div>
+                        }
+                        else
+                        {
+                            @product.CurrentPrice.ToString("C2")
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="Products" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="80px">
+                    <Template Context="product">
+                        <RadzenButton Icon="delete"
+                                      ButtonStyle="ButtonStyle.Danger"
+                                      Variant="Variant.Flat"
+                                      Size="ButtonSize.Medium"
+                                      Disabled="@(product.ProductId == Guid.Empty)"
+                                      Click="@(() => DeleteProduct(product.ProductId))"
+                                      @onclick:stopPropagation="true" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
         </RadzenDataGrid>
     </div>
 </div>
+
+@if (sidebarExpanded)
+{
+    <div class="sidebar-overlay" @onclick="@(() => CloseSidebar(false))"></div>
+
+    <div class="sidebar-panel sidebar-right">
+        <div class="sidebar-header">
+            <h2 class="sidebar-title-large">@sidebarTitle</h2>
+            <RadzenButton Icon="close"
+                          ButtonStyle="ButtonStyle.Light"
+                          Variant="Variant.Flat"
+                          Size="ButtonSize.Small"
+                          Click="@(() => CloseSidebar(false))" />
+        </div>
+
+        <div class="sidebar-content">
+            <ProductEdit IsNew="@isNewProduct"
+                        ProductId="@selectedProductId"
+                        OnClose="@CloseSidebar" />
+        </div>
+    </div>
+}
+
+
+    <style>
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+        }
+
+        .sidebar-panel {
+            position: fixed;
+            top: 0;
+            height: 100vh;
+            background: white;
+            z-index: 9999;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-right {
+            right: 0;
+            width: 600px;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-title-large {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+    </style>

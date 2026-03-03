@@ -1,10 +1,10 @@
-@page "/customers"
+@page "/payment-terms"
 @using InvoicingSystem.Server.Data.Models
 @using Radzen
 @using Radzen.Blazor
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
-<PageTitle>Listado de Clientes</PageTitle>
+<PageTitle>Listado de Términos de Pago</PageTitle>
 
 <style>
     .page-header {
@@ -38,8 +38,8 @@
 </style>
 
 <div class="page-header">
-    <h1>Gestión de Clientes</h1>
-    <RadzenButton Text="Añadir Cliente"
+    <h1>Gestión de Términos de Pago</h1>
+    <RadzenButton Text="Añadir Términos de Pago"
                   Icon="add_circle_outline"
                   ButtonStyle="ButtonStyle.Primary"
                   Click="@GoToAdd"
@@ -48,19 +48,19 @@
 
 <div class="row">
     <div class="col-md-12">
-        <RadzenDataGrid @ref="grid" Data="@customers" Count="@count" TItem="Customers" LoadData="@LoadData"
+        <RadzenDataGrid @ref="grid" Data="@paymentTerms" Count="@count" TItem="PaymentTerms" LoadData="@LoadData"
                         AllowFiltering="true" AllowPaging="true" AllowSorting="true"
                         PageSize="10"
                         PageSizeOptions="@(new int[] { 5, 10, 20, 50 })"
                         ShowPagingSummary="true"
-                        PagingSummaryFormat="Mostrando {0}-{1} de {2} clientes"
+                        PagingSummaryFormat="Mostrando {0}-{1} de {2} términos de pago"
                         IsLoading="@isLoading"
                         RowDoubleClick="@OnRowDoubleClick"
                         Style="max-height:397.6px">
             <Columns>
-                <RadzenDataGridColumn TItem="Customers" Property="CustomerId" Title="ID Cliente" Width="120px">
-                    <Template Context="customer">
-                        @if (string.IsNullOrEmpty(customer.CustomerId))
+                <RadzenDataGridColumn TItem="PaymentTerms" Property="Description" Title="Descripción" Width="300px">
+                    <Template Context="term">
+                        @if (string.IsNullOrEmpty(term.Description))
                         {
                             <div class="placeholder-glow">
                                 <span class="placeholder col-12"></span>
@@ -68,64 +68,34 @@
                         }
                         else
                         {
-                            @customer.CustomerId
+                            @term.Description
                         }
                     </Template>
                 </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn TItem="Customers" Property="Name" Title="Nombre" Width="200px">
-                    <Template Context="customer">
-                        @if (string.IsNullOrEmpty(customer.Name))
+                <RadzenDataGridColumn TItem="PaymentTerms" Property="PaymentDays" Title="Días" Width="120px">
+                    <Template Context="term">
+                        @if (term.PaymentDays < 0)
                         {
                             <div class="placeholder-glow">
-                                <span class="placeholder col-12"></span>
+                                <span class="placeholder col-6"></span>
                             </div>
                         }
                         else
                         {
-                            @customer.Name
+                            <text>@term.PaymentDays días</text>
                         }
                     </Template>
                 </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn TItem="Customers" Property="City" Title="Ciudad" Width="150px">
-                    <Template Context="customer">
-                        @if (string.IsNullOrEmpty(customer.City))
-                        {
-                            <div class="placeholder-glow">
-                                <span class="placeholder col-12"></span>
-                            </div>
-                        }
-                        else
-                        {
-                            @customer.City
-                        }
-                    </Template>
-                </RadzenDataGridColumn>
-
-                <RadzenDataGridColumn TItem="Customers" Property="Nif" Title="NIF" Width="120px">
-                    <Template Context="customer">
-                        @if (string.IsNullOrEmpty(customer.Nif))
-                        {
-                            <div class="placeholder-glow">
-                                <span class="placeholder col-12"></span>
-                            </div>
-                        }
-                        else
-                        {
-                            @customer.Nif
-                        }
-                    </Template>
-                </RadzenDataGridColumn>
-
-                <RadzenDataGridColumn TItem="Customers" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="80px">
-                    <Template Context="customer">
+                <RadzenDataGridColumn TItem="PaymentTerms" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="80px">
+                    <Template Context="term">
                         <RadzenButton Icon="delete"
                                       ButtonStyle="ButtonStyle.Danger"
                                       Variant="Variant.Flat"
                                       Size="ButtonSize.Medium"
-                                      Disabled="@(string.IsNullOrEmpty(customer.CustomerId))"
-                                      Click="@(() => DeleteCustomer(customer.CustomerId))"
+                                      Disabled="@(term.PaymentTermsId == Guid.Empty)"
+                                      Click="@(() => DeletePaymentTerm(term.PaymentTermsId))"
                                       @onclick:stopPropagation="true" />
                     </Template>
                 </RadzenDataGridColumn>
@@ -134,7 +104,6 @@
     </div>
 </div>
 
-@* Sidebar deslizante desde la derecha para editar/crear clientes *@
 @if (sidebarExpanded)
 {
     <div class="sidebar-overlay" @onclick="@(() => CloseSidebar(false))"></div>
@@ -150,11 +119,13 @@
         </div>
 
         <div class="sidebar-content">
-            <CustomerEdit IsNew="@isNewCustomer"
-                         CustomerId="@selectedCustomerId"
-                         OnClose="@CloseSidebar" />
+            <PaymentTermEdit IsNew="@isNewPaymentTerm"
+                            PaymentTermsId="@selectedPaymentTermId"
+                            OnClose="@CloseSidebar" />
         </div>
     </div>
+}
+
 
     <style>
         .sidebar-overlay {
@@ -205,4 +176,3 @@
             padding: 1.5rem;
         }
     </style>
-}

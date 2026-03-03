@@ -1,4 +1,5 @@
 using System.Net.Http;
+using InvoicingSystem.Client.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -12,7 +13,7 @@ using Radzen.Blazor;
 
 namespace InvoicingSystem.Client.Layout
 {
-    public partial class MainLayout
+    public partial class MainLayout : IDisposable
     {
         [Inject]
         protected IJSRuntime JSRuntime { get; set; }
@@ -32,11 +33,33 @@ namespace InvoicingSystem.Client.Layout
         [Inject]
         protected NotificationService NotificationService { get; set; }
 
+        [Inject]
+        protected SidebarStateService SidebarStateService { get; set; }
+
         private bool sidebarExpanded = true;
+
+        protected override void OnInitialized()
+        {
+            // Sincronizo con el servicio
+            sidebarExpanded = SidebarStateService.IsExpanded;
+            SidebarStateService.OnChange += OnSidebarStateChanged;
+        }
+
+        private void OnSidebarStateChanged()
+        {
+            sidebarExpanded = SidebarStateService.IsExpanded;
+            StateHasChanged();
+        }
 
         void SidebarToggleClick()
         {
             sidebarExpanded = !sidebarExpanded;
+            SidebarStateService.IsExpanded = sidebarExpanded;
+        }
+
+        public void Dispose()
+        {
+            SidebarStateService.OnChange -= OnSidebarStateChanged;
         }
     }
 }

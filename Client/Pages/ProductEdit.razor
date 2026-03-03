@@ -1,0 +1,99 @@
+@using InvoicingSystem.Server.Data.Models
+@using InvoicingSystem.Client.Interfaces
+@using Radzen
+@using Radzen.Blazor
+@inject IProductsService ProductsService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<PageTitle>@(IsNew ? "Nuevo Producto" : "Editar Producto")</PageTitle>
+
+<RadzenStack Gap="1rem">
+    @if (isLoading)
+    {
+        <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+    }
+    else if (product != null)
+    {
+        <RadzenTemplateForm Data="@product" Submit="@OnSubmit" TItem="Products">
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12">
+                    <RadzenFormField Text="Nombre" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenTextBox @bind-Value="product.Name"
+                                       Name="Name"
+                                       Placeholder="Ej: Servicio de Consultoría"
+                                       class="input-full" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="Name" Text="El nombre es obligatorio" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow Gap="1rem" class="row-spacing">
+                <RadzenColumn Size="12">
+                    <RadzenFormField Text="Descripción" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenTextArea @bind-Value="product.Description"
+                                        Name="Description"
+                                        Rows="3"
+                                        Placeholder="Descripción detallada del producto o servicio" 
+                                        class="input-full" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="Description" Text="La descripción es obligatoria" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow Gap="1rem" class="row-spacing">
+                <RadzenColumn Size="12">
+                    <RadzenFormField Text="Precio Actual (€)" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenNumeric @bind-Value="product.CurrentPrice"
+                                       Name="CurrentPrice"
+                                       ShowUpDown="false"
+                                       Min="0"
+                                       Max="999999.99m"
+                                       Format="c2"
+                                       class="input-full" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="CurrentPrice" Text="El precio es obligatorio" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow Gap="1rem" class="row-spacing-large">
+                <RadzenColumn Size="12" class="text-right">
+                    <RadzenButton Text="Cancelar"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@Cancel"
+                                  class="btn-cancel" />
+                    <RadzenButton Text="Guardar"
+                                  ButtonType="ButtonType.Submit"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Icon="save" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenTemplateForm>
+    }
+</RadzenStack>
+
+<style>
+    .form-field-full {
+        width: 100%;
+    }
+
+    .input-full {
+        width: 100%;
+    }
+
+    .row-spacing {
+        margin-top: 1rem;
+    }
+
+    .row-spacing-large {
+        margin-top: 2rem;
+    }
+
+    .btn-cancel {
+        margin-right: 0.5rem;
+    }
+
+    .text-right {
+        text-align: right;
+    }
+</style>

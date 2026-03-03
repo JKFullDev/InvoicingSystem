@@ -1,6 +1,5 @@
-﻿using InvoicingSystem.Client.Interfaces;
+using InvoicingSystem.Client.Interfaces;
 using InvoicingSystem.Server.Data.Models;
-using InvoicingSystem.Server.Data.Models.DTOs;
 using Microsoft.AspNetCore.Components;
 using Radzen;
 using Radzen.Blazor;
@@ -14,21 +13,41 @@ namespace InvoicingSystem.Client.Pages
     {
         [Inject] protected ICustomersService CustomersService { get; set; } = default!;
         [Inject] protected NotificationService NotificationService { get; set; } = default!;
+        [Inject] protected DialogService DialogService { get; set; } = default!;
 
-        // Variables de la tabla
         protected RadzenDataGrid<Customers> grid = default!;
         protected IEnumerable<Customers>? customers;
         protected int count;
-        protected bool isLoading = false;
+        protected bool isLoading = true;
+        private bool _firstRender = true;
 
-        // Variables del formulario Maestro-Detalle
-        protected bool showForm = false;
-        protected bool isNew = false;
-        protected Customers customerToEdit = new Customers();
+        // Variables para el sidebar
+        private bool sidebarExpanded = false;
+        private string sidebarTitle = "";
+        private bool isNewCustomer = true;
+        private string? selectedCustomerId = null;
 
         protected override async Task OnInitializedAsync()
         {
+            customers = new List<Customers>
+            {
+                new Customers { CustomerId = "", Name = "", Address = "", City = "", Nif = "" },
+                new Customers { CustomerId = "", Name = "", Address = "", City = "", Nif = "" },
+                new Customers { CustomerId = "", Name = "", Address = "", City = "", Nif = "" },
+                new Customers { CustomerId = "", Name = "", Address = "", City = "", Nif = "" },
+                new Customers { CustomerId = "", Name = "", Address = "", City = "", Nif = "" }
+            };
             await InvokeAsync(StateHasChanged);
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender && _firstRender)
+            {
+                _firstRender = false;
+                await Task.Delay(200);
+                await grid.Reload();
+            }
         }
 
         protected async Task LoadData(LoadDataArgs args)
@@ -53,65 +72,29 @@ namespace InvoicingSystem.Client.Pages
 
         protected void GoToAdd()
         {
-            isNew = true;
-            customerToEdit = new Customers(); // Vaciamos el formulario
-            showForm = true;
+            sidebarTitle = "Nuevo Cliente";
+            isNewCustomer = true;
+            selectedCustomerId = null;
+            sidebarExpanded = true;
         }
 
         protected void OnRowDoubleClick(DataGridRowMouseEventArgs<Customers> args)
         {
             if (args.Data == null) return;
 
-            isNew = false;
-
-            // Clonamos asegurando que si algún campo es null, se ponga como cadena vacía
-            customerToEdit = new Customers
-            {
-                CustomerId = args.Data.CustomerId ?? "",
-                Name = args.Data.Name ?? "",
-                Nif = args.Data.Nif ?? "",
-                City = args.Data.City ?? "",
-                Address = args.Data.Address ?? ""
-            };
-
-            showForm = true;
+            sidebarTitle = $"Editar Cliente: {args.Data.Name}";
+            isNewCustomer = false;
+            selectedCustomerId = args.Data.CustomerId;
+            sidebarExpanded = true;
         }
 
-        protected void CancelEdit()
+        private async Task CloseSidebar(bool reload = false)
         {
-            showForm = false;
-        }
+            sidebarExpanded = false;
 
-        protected async Task SaveCustomer(Customers item)
-        {
-            try
+            if (reload)
             {
-                // Mapeamos a tu DTO para enviarlo al servidor
-                var dto = new CustomersDTO
-                {
-                    CustomerId = item.CustomerId,
-                    Name = item.Name,
-                    Nif = item.Nif,
-                    City = item.City,
-                    Address = item.Address
-                };
-
-                if (isNew)
-                {
-                    await CustomersService.CreateCustomers(dto);
-                }
-                else
-                {
-                    // Usamos tu método ReplaceCustomers (PUT)
-                    await CustomersService.ReplaceCustomers(item.CustomerId, dto);
-                }
-
-                showForm = false;
-                await grid.Reload(); // Esto lanza LoadData automáticamente y refresca la vista
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error al guardar: {ex.Message}");
+                await grid.Reload();
             }
         }
 

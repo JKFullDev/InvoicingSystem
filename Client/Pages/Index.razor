@@ -1,31 +1,168 @@
 @page "/"
-<PageTitle>Index</PageTitle>
-<RadzenRow Gap="5" RowGap="5">
-    <RadzenColumn Size="12">
-        <RadzenText Text="Welcome to your new app" TextStyle="Radzen.Blazor.TextStyle.DisplayH2" TagName="Radzen.Blazor.TagName.Auto"></RadzenText>
-        <RadzenText Text="Your Success Is Our Biggest Priority" TextStyle="Radzen.Blazor.TextStyle.H4" TagName="Radzen.Blazor.TagName.H2" class="mt-5"></RadzenText>
-        <RadzenText Text="With Radzen Blazor Studio, application development is just one-click away." TextStyle="Radzen.Blazor.TextStyle.Body1" TagName="Radzen.Blazor.TagName.Auto" class="mt-4" Style="font-size: 20px; line-height: 24px"></RadzenText>
-        <RadzenText Text="Simple to setup, maintain and update." TextStyle="Radzen.Blazor.TextStyle.Body1" TagName="Radzen.Blazor.TagName.Auto" class="mt-3" Style="font-size: 20px; line-height: 24px"></RadzenText>
-        <RadzenCard Style="margin-top: 40px; padding: 20px 40px 40px;">
-            <RadzenRow>
-                <RadzenColumn Size="12" SizeMD="4">
-                    <RadzenIcon Icon="smart_button" Style="margin-top: 20px; width: 48px; height: 48px; font-size: 48px; color: var(--rz-text-title-color);"></RadzenIcon>
-                    <RadzenText Text="Learn the Fundamentals" TextStyle="Radzen.Blazor.TextStyle.DisplayH6" TagName="Radzen.Blazor.TagName.H3"></RadzenText>
-                    <RadzenLink Text="Docs" Path="https://www.radzen.com/blazor-studio/documentation/" Icon="east" Target="_blank" Style="font-size: 18px"></RadzenLink>
-                    <RadzenLink Text="Videos" Path="https://youtube.com/playlist?list=PLQyJPeb3xHcBij_RbHD__2TOo8Jv5HQVc" Icon="east" Target="_blank" Style="display: block; font-size: 18px"></RadzenLink>
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeMD="4">
-                    <RadzenIcon Icon="code" Style="margin-top: 20px; width: 48px; height: 48px; font-size: 48px; color: var(--rz-text-title-color);"></RadzenIcon>
-                    <RadzenText Text="Radzen Blazor Components" TextStyle="Radzen.Blazor.TextStyle.DisplayH6" TagName="Radzen.Blazor.TagName.H3"></RadzenText>
-                    <RadzenLink Text="Demos" Path="https://blazor.radzen.com" Icon="east" Target="_blank" Style="font-size: 18px"></RadzenLink>
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeMD="4">
-                    <RadzenIcon Icon="people_outline" Style="margin-top: 20px; width: 48px; height: 48px; font-size: 48px; color: var(--rz-text-title-color);"></RadzenIcon>
-                    <RadzenText Text="Radzen Community" TextStyle="Radzen.Blazor.TextStyle.DisplayH6" TagName="Radzen.Blazor.TagName.H3"></RadzenText>
-                    <RadzenLink Text="Radzen Blazor Studio Forums" Path="https://forum.radzen.com/c/radzen-blazor-studio/12" Icon="east" Target="_blank" Style="font-size: 18px"></RadzenLink>
-                </RadzenColumn>
-            </RadzenRow>
-        </RadzenCard>
-    </RadzenColumn>
-</RadzenRow>
+@using InvoicingSystem.Server.Data.Models
+@using Radzen
+@using Radzen.Blazor
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
+<PageTitle>Dashboard - Sistema de Facturación</PageTitle>
+
+<style>
+    .dashboard-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+        .dashboard-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+    .metric-card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .metric-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+    }
+
+    .metric-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+</style>
+
+<div class="dashboard-header">
+    <h1>Dashboard de Facturación</h1>
+</div>
+
+@if (isLoading)
+{
+    <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+}
+else
+{
+    <!-- Métricas principales -->
+    <RadzenRow Gap="1rem" class="mb-4">
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+            <RadzenCard class="metric-card">
+                <RadzenIcon Icon="euro_symbol" class="metric-icon" Style="color: #10b981;" />
+                <div class="metric-label">Total Facturado</div>
+                <div class="metric-value" style="color: #10b981;">@totalRevenue.ToString("C2")</div>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+            <RadzenCard class="metric-card">
+                <RadzenIcon Icon="description" class="metric-icon" Style="color: #3b82f6;" />
+                <div class="metric-label">Total Facturas</div>
+                <div class="metric-value" style="color: #3b82f6;">@totalInvoices</div>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+            <RadzenCard class="metric-card">
+                <RadzenIcon Icon="groups" class="metric-icon" Style="color: #f59e0b;" />
+                <div class="metric-label">Clientes</div>
+                <div class="metric-value" style="color: #f59e0b;">@totalCustomers</div>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+            <RadzenCard class="metric-card">
+                <RadzenIcon Icon="inventory_2" class="metric-icon" Style="color: #8b5cf6;" />
+                <div class="metric-label">Productos</div>
+                <div class="metric-value" style="color: #8b5cf6;">@totalProducts</div>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+            <RadzenCard class="metric-card">
+                <RadzenIcon Icon="schedule" class="metric-icon" Style="color: #3b82f6;" />
+                <div class="metric-label">Pendientes</div>
+                <div class="metric-value" style="color: #3b82f6;">@pendingInvoices</div>
+                <small style="color: #6b7280; margin-top: 0.25rem;">Aún en plazo de pago</small>
+            </RadzenCard>
+        </RadzenColumn>
+
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
+            <RadzenCard class="metric-card">
+                <RadzenIcon Icon="report_problem" class="metric-icon" Style="color: #ef4444;" />
+                <div class="metric-label">Vencidas</div>
+                <div class="metric-value" style="color: #ef4444;">@overdueInvoices</div>
+                <small style="color: #6b7280; margin-top: 0.25rem;">Fuera de plazo</small>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <!-- Últimas facturas -->
+    <RadzenRow Gap="1rem">
+        <RadzenColumn Size="12">
+            <RadzenCard>
+                <h3 class="section-title">📋 Últimas Facturas</h3>
+                @if (latestInvoices != null && latestInvoices.Any())
+                {
+                    <RadzenDataGrid Data="@latestInvoices" TItem="SalesInvoiceHeaders" AllowPaging="false" AllowSorting="false">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Property="SalesInvoiceHeaderId" Title="ID" Width="140px" />
+                            <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Property="CustomerId" Title="Cliente" Width="150px" />
+                            <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Property="InvoiceDate" Title="Fecha Emisión" Width="140px">
+                                <Template Context="invoice">
+                                    @invoice.InvoiceDate.ToString("dd/MM/yyyy")
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Property="QuoteReference" Title="Ref. Presupuesto" Width="160px" />
+                            <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Title="Vencimiento" Width="140px">
+                                <Template Context="invoice">
+                                    @invoice.DueDate.ToString("dd/MM/yyyy")
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="SalesInvoiceHeaders" Title="Estado" Width="120px">
+                                <Template Context="invoice">
+                                    @if (invoice.DueDate < DateTime.Now)
+                                    {
+                                        <RadzenBadge Text="Vencida" BadgeStyle="BadgeStyle.Danger" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenBadge Text="Pendiente" BadgeStyle="BadgeStyle.Info" />
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                }
+                else
+                {
+                    <p style="text-align: center; color: #6b7280; padding: 2rem;">
+                        No hay facturas registradas aún. Crea tu primera factura desde el menú lateral.
+                    </p>
+                }
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+}

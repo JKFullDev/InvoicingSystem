@@ -1,0 +1,91 @@
+@using InvoicingSystem.Server.Data.Models
+@using InvoicingSystem.Client.Interfaces
+@using Radzen
+@using Radzen.Blazor
+@inject IPaymentTermsService PaymentTermsService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<PageTitle>@(IsNew ? "Nuevo Término de Pago" : "Editar Término de Pago")</PageTitle>
+
+<RadzenStack Gap="1rem">
+    @if (isLoading)
+    {
+        <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+    }
+    else if (paymentTerm != null)
+    {
+        <RadzenTemplateForm Data="@paymentTerm" Submit="@OnSubmit" TItem="PaymentTerms">
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="7">
+                    <RadzenFormField Text="Descripción" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenTextBox @bind-Value="paymentTerm.Description"
+                                       Name="Description"
+                                       Placeholder="Ej: Pago a 30 días"
+                                       class="input-full" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="Description" Text="La descripción es obligatoria" />
+                </RadzenColumn>
+
+                <RadzenColumn Size="5">
+                    <RadzenFormField Text="Días de Pago" Variant="Variant.Outlined" class="form-field-full">
+                        <RadzenNumeric @bind-Value="paymentTerm.PaymentDays"
+                                       Name="PaymentDays"
+                                       ShowUpDown="true"
+                                       Min="0"
+                                       Max="365"
+                                       class="input-full" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="PaymentDays" Text="Los días de pago son obligatorios" />
+                    <small class="help-text">Días para el vencimiento del pago</small>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow Gap="1rem" class="row-spacing-large">
+                <RadzenColumn Size="12" class="text-right">
+                    <RadzenButton Text="Cancelar"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Click="@Cancel"
+                                  class="btn-cancel" />
+                    <RadzenButton Text="Guardar"
+                                  ButtonType="ButtonType.Submit"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Icon="save" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenTemplateForm>
+    }
+</RadzenStack>
+
+<style>
+    .form-field-full {
+        width: 100%;
+    }
+
+    .input-full {
+        width: 100%;
+    }
+
+    .help-text {
+        color: #6b7280;
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+    .row-spacing {
+        margin-top: 1rem;
+    }
+
+    .row-spacing-large {
+        margin-top: 2rem;
+    }
+
+    .btn-cancel {
+        margin-right: 0.5rem;
+    }
+
+    .text-right {
+        text-align: right;
+    }
+</style>

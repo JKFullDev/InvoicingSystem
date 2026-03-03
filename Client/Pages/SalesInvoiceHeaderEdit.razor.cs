@@ -1,4 +1,5 @@
 using InvoicingSystem.Client.Interfaces;
+using InvoicingSystem.Client.Services;
 using InvoicingSystem.Server.Data.Models;
 using InvoicingSystem.Server.Data.Models.DTOs;
 using Microsoft.AspNetCore.Components;
@@ -16,10 +17,20 @@ namespace InvoicingSystem.Client.Pages
         [Parameter] public bool IsNew { get; set; } = false;
         [Parameter] public EventCallback<bool> OnClose { get; set; }  // Callback para cerrar sidebar
 
+        [Inject] protected SidebarStateService SidebarStateService { get; set; } = default!;
+
         private SalesInvoiceHeaders? invoice;
         private List<SalesInvoiceLines> invoiceLines = new();
         private HashSet<Guid> linesToDelete = new(); // Líneas marcadas para eliminar
         private bool isLoading = true;
+
+        // Variables para el sidebar de líneas
+        private bool lineSidebarExpanded = false;
+        private string lineSidebarTitle = "";
+        private bool isNewLine = true;
+        private SalesInvoiceLines? selectedLine = null;
+        private int selectedLineIndex = -1;
+        private bool mainSidebarWasExpanded = false;  // Para restaurar el estado después
 
         // Listas para dropdowns
         private IEnumerable<Customers>? customers;
@@ -44,18 +55,18 @@ namespace InvoicingSystem.Client.Pages
                     DueDate = DateTime.Now.AddDays(30),
                     QuoteReference = "",
                     CustomerId = "",
-                    PaymentTermsId = null  // null para que el floating label funcione
+                    PaymentTermsId = null
                 };
                 invoiceLines = new List<SalesInvoiceLines>();
             }
             else if (!string.IsNullOrEmpty(InvoiceId))
             {
-                // Cargo factura existente con líneas usando OData $expand
+                // Traigo la factura con sus líneas desde la API
                 invoice = await SalesInvoiceHeadersService.GetSalesInvoiceHeaderById(InvoiceId);
 
                 if (invoice != null)
                 {
-                    // Hago una copia profunda de las líneas para evitar problemas de referencia
+                    // Clono las líneas para no tener problemas al editar
                     invoiceLines = invoice.Lines?.Select(line => new SalesInvoiceLines
                     {
                         SalesInvoiceLineId = line.SalesInvoiceLineId,
@@ -69,32 +80,32 @@ namespace InvoicingSystem.Client.Pages
 
                     selectedPaymentTerm = paymentTerms?.FirstOrDefault(pt => pt.PaymentTermsId == invoice.PaymentTermsId);
 
-                    // Debug: Muestro cuántas líneas se cargaron
+                    // Debug: líneas cargadas
                     Console.WriteLine($"[DEBUG] Líneas cargadas: {invoiceLines.Count}");
                 }
             }
 
-            // Delay artificial para que se vea la animación de la barra de progreso
-            await Task.Delay(500);  // 500ms para apreciar la animación
+            // Espero medio segundo para que se vea el loading
+            await Task.Delay(500);
 
             isLoading = false;
         }
 
         private async Task LoadMasterData()
         {
-            // Cargo clientes
+            // Traigo clientes
             var customersResult = await CustomersService.GetCustomers(new Query { Top = 1000 });
             customers = customersResult?.Value;
 
-            // Cargo condiciones de pago
+            // Traigo condiciones de pago
             var paymentTermsResult = await PaymentTermsService.GetPaymentTerms(new Query { Top = 1000 });
             paymentTerms = paymentTermsResult?.Value;
 
-            // Cargo productos
+            // Traigo productos
             var productsResult = await ProductsService.GetProducts(new Query { Top = 1000 });
             products = productsResult?.Value;
 
-            // Cargo tipos de IVA
+            // Traigo tipos de IVA
             var taxRatesResult = await TaxRatesService.GetTaxRates(new Query { Top = 1000 });
             taxRates = taxRatesResult?.Value;
         }
@@ -135,53 +146,42 @@ namespace InvoicingSystem.Client.Pages
             return Task.CompletedTask;
         }
 
-        private async Task AddLine()
+        private void AddLine()
         {
-            // Abro diálogo para añadir línea
-            var line = await DialogService.OpenAsync<SalesInvoiceLineEdit>("Nueva Línea",
-                new Dictionary<string, object?>
-                {
-                    { "IsNew", true },
-                    { "Products", products },
-                    { "TaxRates", taxRates }
-                },
-                new DialogOptions { Width = "600px", Height = "auto" });
+            // Guardo el estado actual del sidebar principal
+            mainSidebarWasExpanded = SidebarStateService.IsExpanded;
 
-            if (line != null)
-            {
-                Console.WriteLine($"[DEBUG] AddLine - Línea recibida del diálogo: {line.SalesInvoiceLineId}");
-                invoiceLines.Add(line);
-                Console.WriteLine($"[DEBUG] AddLine - Total líneas ahora: {invoiceLines.Count}");
+            // Colapso el sidebar principal
+            SidebarStateService.IsExpanded = false;
 
-                // Fuerzo actualización del componente
-                await InvokeAsync(StateHasChanged);
-            }
+            // Abro sidebar para añadir línea
+            lineSidebarTitle = "Nueva Línea";
+            isNewLine = true;
+            selectedLine = null;
+            selectedLineIndex = -1;
+            lineSidebarExpanded = true;
         }
 
-        private async Task EditLine(int index)
+        private void EditLine(int index)
         {
             var originalLine = invoiceLines[index];
 
-            // Abro diálogo para editar línea
-            var line = await DialogService.OpenAsync<SalesInvoiceLineEdit>("Editar Línea",
-                new Dictionary<string, object?>
-                {
-                    { "IsNew", false },
-                    { "Line", originalLine },
-                    { "Products", products },
-                    { "TaxRates", taxRates }
-                },
-                new DialogOptions { Width = "600px", Height = "auto" });
+            // Guardo el estado actual del sidebar principal
+            mainSidebarWasExpanded = SidebarStateService.IsExpanded;
 
-            if (line != null)
-            {
-                invoiceLines[index] = line;
-                StateHasChanged();
-            }
+            // Colapso el sidebar principal
+            SidebarStateService.IsExpanded = false;
+
+            // Abro sidebar para editar línea
+            lineSidebarTitle = "Editar Línea";
+            isNewLine = false;
+            selectedLine = originalLine;
+            selectedLineIndex = index;
+            lineSidebarExpanded = true;
         }
 
         // Método para manejar doble clic en una línea
-        private async Task OnLineDoubleClick(DataGridRowMouseEventArgs<SalesInvoiceLines> args)
+        private void OnLineDoubleClick(DataGridRowMouseEventArgs<SalesInvoiceLines> args)
         {
             if (args.Data == null) return;
 
@@ -191,7 +191,35 @@ namespace InvoicingSystem.Client.Pages
             if (index >= 0)
             {
                 // Llamo al método EditLine existente
-                await EditLine(index);
+                EditLine(index);
+            }
+        }
+
+        // Cierro el sidebar de líneas y proceso el resultado
+        private async Task CloseLineSidebar(SalesInvoiceLines? line)
+        {
+            lineSidebarExpanded = false;
+
+            // Restauro el estado anterior del sidebar principal
+            SidebarStateService.IsExpanded = mainSidebarWasExpanded;
+
+            if (line != null)
+            {
+                if (isNewLine)
+                {
+                    // Añado nueva línea
+                    Console.WriteLine($"[DEBUG] AddLine - Línea recibida: {line.SalesInvoiceLineId}");
+                    invoiceLines.Add(line);
+                    Console.WriteLine($"[DEBUG] AddLine - Total líneas ahora: {invoiceLines.Count}");
+                }
+                else if (selectedLineIndex >= 0)
+                {
+                    // Actualizo línea existente
+                    invoiceLines[selectedLineIndex] = line;
+                }
+
+                // Fuerzo actualización del componente
+                await InvokeAsync(StateHasChanged);
             }
         }
 
@@ -230,7 +258,7 @@ namespace InvoicingSystem.Client.Pages
         // Método para aplicar estilos a las filas marcadas para eliminar
         private void RowRender(RowRenderEventArgs<SalesInvoiceLines> args)
         {
-            if (linesToDelete.Contains(args.Data.SalesInvoiceLineId))
+            if (args.Data != null && linesToDelete.Contains(args.Data.SalesInvoiceLineId))
             {
                 args.Attributes.Add("style", "background-color: #fee2e2; text-decoration: line-through; opacity: 0.7;");
             }
