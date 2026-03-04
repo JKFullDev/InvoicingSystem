@@ -46,6 +46,7 @@
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+
     }
 
     .section-title {
@@ -62,46 +63,46 @@
 
 @if (isLoading)
 {
-    <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+    <RadzenProgressBar ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" AriaLabel="Primary loading" />
 }
 else
 {
     <!-- Métricas principales -->
     <RadzenRow Gap="1rem" class="mb-4">
-        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
-            <RadzenCard class="metric-card">
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4" Class="animate__animated animate__fadeInUp">
+            <RadzenCard Class="metric-card">
                 <RadzenIcon Icon="euro_symbol" class="metric-icon" Style="color: #10b981;" />
                 <div class="metric-label">Total Facturado</div>
                 <div class="metric-value" style="color: #10b981;">@totalRevenue.ToString("C2")</div>
             </RadzenCard>
         </RadzenColumn>
 
-        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
-            <RadzenCard class="metric-card">
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4" Class="animate__animated animate__fadeInUp" Style="animation-delay: 0.1s;">
+            <RadzenCard Class="metric-card">
                 <RadzenIcon Icon="description" class="metric-icon" Style="color: #3b82f6;" />
                 <div class="metric-label">Total Facturas</div>
                 <div class="metric-value" style="color: #3b82f6;">@totalInvoices</div>
             </RadzenCard>
         </RadzenColumn>
 
-        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
-            <RadzenCard class="metric-card">
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4" Class="animate__animated animate__fadeInUp" Style="animation-delay: 0.2s;">
+            <RadzenCard Class="metric-card">
                 <RadzenIcon Icon="groups" class="metric-icon" Style="color: #f59e0b;" />
                 <div class="metric-label">Clientes</div>
                 <div class="metric-value" style="color: #f59e0b;">@totalCustomers</div>
             </RadzenCard>
         </RadzenColumn>
 
-        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
-            <RadzenCard class="metric-card">
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4" Class="animate__animated animate__fadeInUp" Style="animation-delay: 0.3s;">
+            <RadzenCard Class="metric-card">
                 <RadzenIcon Icon="inventory_2" class="metric-icon" Style="color: #8b5cf6;" />
                 <div class="metric-label">Productos</div>
                 <div class="metric-value" style="color: #8b5cf6;">@totalProducts</div>
             </RadzenCard>
         </RadzenColumn>
 
-        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
-            <RadzenCard class="metric-card">
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4" Class="animate__animated animate__fadeInUp" Style="animation-delay: 0.4s;">
+            <RadzenCard Class="metric-card">
                 <RadzenIcon Icon="schedule" class="metric-icon" Style="color: #3b82f6;" />
                 <div class="metric-label">Pendientes</div>
                 <div class="metric-value" style="color: #3b82f6;">@pendingInvoices</div>
@@ -109,8 +110,8 @@ else
             </RadzenCard>
         </RadzenColumn>
 
-        <RadzenColumn Size="12" SizeMD="6" SizeLG="4">
-            <RadzenCard class="metric-card">
+        <RadzenColumn Size="12" SizeMD="6" SizeLG="4" Class="animate__animated animate__fadeInUp" Style="animation-delay: 0.5s;">
+            <RadzenCard Class="metric-card">
                 <RadzenIcon Icon="report_problem" class="metric-icon" Style="color: #ef4444;" />
                 <div class="metric-label">Vencidas</div>
                 <div class="metric-value" style="color: #ef4444;">@overdueInvoices</div>
@@ -121,9 +122,9 @@ else
 
     <!-- Últimas facturas -->
     <RadzenRow Gap="1rem">
-        <RadzenColumn Size="12">
+        <RadzenColumn Size="12" Class="animate__animated animate__fadeInUp" Style="animation-delay: 0.6s;">
             <RadzenCard>
-                <h3 class="section-title">📋 Últimas Facturas</h3>
+                <h3 class="section-title">Últimas Facturas</h3>
                 @if (latestInvoices != null && latestInvoices.Any())
                 {
                     <RadzenDataGrid Data="@latestInvoices" TItem="SalesInvoiceHeaders" AllowPaging="false" AllowSorting="false">
@@ -145,11 +146,11 @@ else
                                 <Template Context="invoice">
                                     @if (invoice.DueDate < DateTime.Now)
                                     {
-                                        <RadzenBadge Text="Vencida" BadgeStyle="BadgeStyle.Danger" />
+                                        <RadzenBadge Text="Vencida" BadgeStyle="BadgeStyle.Danger" Style="width:80px" />
                                     }
                                     else
                                     {
-                                        <RadzenBadge Text="Pendiente" BadgeStyle="BadgeStyle.Info" />
+                                        <RadzenBadge Text="Pendiente" BadgeStyle="BadgeStyle.Info" Style="width:80px" />
                                     }
                                 </Template>
                             </RadzenDataGridColumn>

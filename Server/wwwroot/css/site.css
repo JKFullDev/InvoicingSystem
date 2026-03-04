@@ -84,3 +84,121 @@ a:focus {
 .loading-progress-text:after {
     content: var(--blazor-load-percentage-text, "Loading");
 }
+
+
+/*
+****************************************
+            NUEVOS ESTILOS
+****************************************
+*/
+
+/* --- DASHBOARD INICIO --- */  
+/*Mejoras para las tarjetas de métricas */
+.metric-card {
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+/* Al pasar el ratón, la tarjeta sube y la sombra crece */
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22) !important;
+}
+
+
+
+/* --- TABLAS --- */
+ /*Animación de entrada para las filas */
+.rz-grid-table tr {
+    animation: fadeInRow 0.5s ease-out forwards;
+    opacity: 0; /* Empiezan invisibles */
+}
+
+/* Animación */
+@keyframes fadeInRow {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Aparcen las 5 filas en cascada */
+.rz-grid-table tr:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.rz-grid-table tr:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.rz-grid-table tr:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.rz-grid-table tr:nth-child(4) {
+    animation-delay: 0.2s;
+}
+
+.rz-grid-table tr:nth-child(5) {
+    animation-delay: 0.25s;
+}
+
+/* Hover filas */
+.rz-grid-table tr:hover td {
+    background-color: #e3f2fd !important; 
+    transition: background-color 0.2s ease;
+}
+
+
+/* --- BOTONES --- */
+
+/* Transición suave para todos los botones Radzen */
+.rz-button {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Click -> boton pa dentro */
+.rz-button:active {
+    transform: scale(0.95) !important; 
+}
+
+/* Hover -> boton sube */
+.rz-button:hover {
+    transform: translateY(-2px); 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15); 
+}
+
+
+
+
+/* --- BADGES ANIMADOS --- */
+
+/* Definición de la animación de latido (Pulse) */
+@keyframes pulse-red {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); /* El anillo se expande y desvanece */
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+/* Clase para aplicar la animación */
+.badge-pulse-danger {
+    background-color: #dc3545 !important; /* Rojo bootstrap */
+    color: white !important;
+    border-radius: 50%; /* Redondo si es pequeño, o pill si es texto */
+    animation: pulse-red 2s infinite; /* Se repite infinitamente */
+}
