@@ -14,8 +14,9 @@ builder.Services.AddScoped<IProductsService, ProductsService>();
 builder.Services.AddScoped<ITaxRatesService, TaxRatesService>();
 builder.Services.AddScoped<ISalesInvoiceLinesService, SalesInvoiceLinesService>();
 builder.Services.AddScoped<ISalesInvoiceHeadersService, SalesInvoiceHeadersService>();
-builder.Services.AddSingleton<SidebarStateService>();  // Servicio para controlar el sidebar principal
-builder.Services.AddScoped<NotificationService>(); //Servicio para notificaciones tipo 'toast'
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddSingleton<SidebarStateService>();
+builder.Services.AddScoped<NotificationService>();
 builder.Services.AddRadzenCookieThemeService(options =>
 {
     options.Name = "InvoicingSystemTheme";

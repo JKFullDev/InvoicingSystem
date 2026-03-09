@@ -1,0 +1,92 @@
+@using InvoicingSystem.Server.Data.Models
+@using Radzen
+@using Radzen.Blazor
+
+@if (IsOpen)
+{
+    <div class="sidebar-overlay" @onclick="Close" style="height:100%"></div>
+    <div class="sidebar-panel sidebar-right" style="height:100%">
+        <div class="sidebar-header">
+            <h2 class="sidebar-title-large">Carrito de Compras</h2>
+            <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Click="Close" />
+        </div>
+
+        <div class="sidebar-content">
+            @if (cart?.Items.Any() == true)
+            {
+                <RadzenStack Gap="1rem">
+                    @foreach (var item in cart.Items)
+                    {
+                        <RadzenCard Variant="Variant.Outlined">
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Start">
+                                <RadzenImage Path="@GetImage(item.ImageUrl)"
+                                           Style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;"
+                                           AlternateText="@item.Name" />
+                                <RadzenStack Gap="0.5rem" Style="flex: 1">
+                                    <RadzenText TextStyle="TextStyle.Subtitle1"><b>@item.Name</b></RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2">@item.Price.ToString("C2")</RadzenText>
+
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                        <RadzenButton Icon="remove" 
+                                                    Size="ButtonSize.ExtraSmall" 
+                                                    ButtonStyle="ButtonStyle.Light"
+                                                    Click="@(() => DecreaseQuantity(item))" />
+                                        <RadzenText TextStyle="TextStyle.Body1"><b>@item.Quantity</b></RadzenText>
+                                        <RadzenButton Icon="add" 
+                                                    Size="ButtonSize.ExtraSmall" 
+                                                    ButtonStyle="ButtonStyle.Light"
+                                                    Click="@(() => IncreaseQuantity(item))" />
+                                        <RadzenButton Icon="delete" 
+                                                    Size="ButtonSize.ExtraSmall" 
+                                                    ButtonStyle="ButtonStyle.Danger"
+                                                    Click="@(() => RemoveItem(item))"
+                                                    Style="margin-left: auto" />
+                                    </RadzenStack>
+
+                                    <RadzenText TextStyle="TextStyle.Subtitle2">
+                                        Subtotal: <b>@item.Subtotal.ToString("C2")</b>
+                                    </RadzenText>
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenCard>
+                    }
+
+                    <RadzenCard Variant="Variant.Filled">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText>Subtotal:</RadzenText>
+                                <RadzenText><b>@cart.Subtotal.ToString("C2")</b></RadzenText>
+                            </RadzenStack>
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText>IVA (21%):</RadzenText>
+                                <RadzenText><b>@cart.Tax.ToString("C2")</b></RadzenText>
+                            </RadzenStack>
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                <RadzenText TextStyle="TextStyle.H6">Total:</RadzenText>
+                                <RadzenText TextStyle="TextStyle.H6"><b>@cart.Total.ToString("C2")</b></RadzenText>
+                            </RadzenStack>
+                        </RadzenStack>
+                    </RadzenCard>
+
+                    <RadzenButton Text="Vaciar Carrito" 
+                                ButtonStyle="ButtonStyle.Danger" 
+                                Variant="Variant.Outlined"
+                                Style="width: 100%"
+                                Click="ClearCart" />
+                    <RadzenButton Text="Proceder al Pago" 
+                                ButtonStyle="ButtonStyle.Success" 
+                                Style="width: 100%"
+                                Click="Checkout" />
+                </RadzenStack>
+            }
+            else
+            {
+                <RadzenStack AlignItems="AlignItems.Center" Gap="2rem" Style="padding: 4rem 0">
+                    <RadzenIcon Icon="shopping_cart" Style="font-size: 4rem; color: #ccc" />
+                    <RadzenText TextStyle="TextStyle.H6">Tu carrito está vacío</RadzenText>
+                    <RadzenButton Text="Continuar Comprando" Click="Close" />
+                </RadzenStack>
+            }
+        </div>
+    </div>
+}

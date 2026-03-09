@@ -1,0 +1,29 @@
+@using InvoicingSystem.Server.Data.Models
+@using Radzen
+@using Radzen.Blazor
+
+<RadzenStack Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body1">Seleccione el cliente para la factura:</RadzenText>
+
+    <RadzenDropDown @bind-Value="@selectedCustomerId" 
+                    Data="@customers" 
+                    TextProperty="Name" 
+                    ValueProperty="CustomerId"
+                    Placeholder="Seleccione un cliente..."
+                    Style="width: 100%"
+                    AllowClear="false"
+                    AllowFiltering="true"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" />
+
+    @if (customers != null && customers.Any())
+    {
+        <RadzenText TextStyle="TextStyle.Caption" Style="color: #666;">
+            Total de clientes: @customers.Count()
+        </RadzenText>
+    }
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+        <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
+        <RadzenButton Text="Crear Factura" ButtonStyle="ButtonStyle.Primary" Click="Submit" Disabled="@(string.IsNullOrEmpty(selectedCustomerId))" />
+    </RadzenStack>
+</RadzenStack>

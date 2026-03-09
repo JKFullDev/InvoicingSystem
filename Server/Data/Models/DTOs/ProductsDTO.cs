@@ -16,5 +16,7 @@ namespace InvoicingSystem.Server.Data.Models.DTOs
         [Required]
         public decimal CurrentPrice { get; set; }
 
+        public string? ImageUrl { get; set; }
+
     }
 }

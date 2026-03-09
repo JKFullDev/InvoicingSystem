@@ -56,7 +56,8 @@
                         PagingSummaryFormat="Mostrando {0}-{1} de {2} clientes"
                         IsLoading="@isLoading"
                         RowDoubleClick="@OnRowDoubleClick"
-                        Style="max-height:397.6px">
+                        Style="max-height:397.6px"
+                        FilterMode="FilterMode.Advanced">
             <Columns>
                 <RadzenDataGridColumn TItem="Customers" Property="CustomerId" Title="ID Cliente" Width="120px">
                     <Template Context="customer">
