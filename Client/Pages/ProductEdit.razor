@@ -11,7 +11,7 @@
 <RadzenStack Gap="1rem">
     @if (isLoading)
     {
-        <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+    <RadzenProgressBar ProgressBarStyle="ProgressBarStyle.Primary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" AriaLabel="Primary loading" />
     }
     else if (product != null)
     {

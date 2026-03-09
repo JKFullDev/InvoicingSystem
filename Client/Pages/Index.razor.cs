@@ -17,6 +17,7 @@ namespace InvoicingSystem.Client.Pages
         [Inject] protected ISalesInvoiceLinesService LinesService { get; set; } = default!;
 
         private bool isLoading = true;
+        private bool _hasLoaded = false;
 
         // Métricas
         private int totalInvoices = 0;
@@ -29,9 +30,14 @@ namespace InvoicingSystem.Client.Pages
         // Últimas facturas
         private IEnumerable<SalesInvoiceHeaders>? latestInvoices;
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            await LoadDashboardData();
+            if (firstRender && !_hasLoaded)
+            {
+                _hasLoaded = true;
+                await LoadDashboardData();
+                StateHasChanged();
+            }
         }
 
         private async Task LoadDashboardData()

@@ -143,20 +143,20 @@
         <div class="sidebar-header">
             <h2 class="sidebar-title-large">@sidebarTitle</h2>
             <RadzenButton Icon="close"
-                          ButtonStyle="ButtonStyle.Light"
-                          Variant="Variant.Flat"
-                          Size="ButtonSize.Small"
-                          Click="@(() => CloseSidebar(false))" />
+            ButtonStyle="ButtonStyle.Light"
+            Variant="Variant.Flat"
+            Size="ButtonSize.Small"
+            Click="@(() => CloseSidebar(false))" />
         </div>
 
         <div class="sidebar-content">
             <CustomerEdit IsNew="@isNewCustomer"
-                         CustomerId="@selectedCustomerId"
-                         OnClose="@CloseSidebar" />
+            CustomerId="@selectedCustomerId"
+            OnClose="@CloseSidebar" />
         </div>
     </div>
-
-    <style>
+}
+<style>
         .sidebar-overlay {
             position: fixed;
             top: 0;
@@ -205,4 +205,4 @@
             padding: 1.5rem;
         }
     </style>
-}
+
