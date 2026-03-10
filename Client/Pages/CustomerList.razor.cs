@@ -12,6 +12,7 @@ namespace InvoicingSystem.Client.Pages
     public partial class CustomerList : ComponentBase
     {
         [Inject] protected ICustomersService CustomersService { get; set; } = default!;
+        [Inject] protected ISalesInvoiceHeadersService SalesInvoiceHeadersService { get; set; } = default!;
         [Inject] protected NotificationService NotificationService { get; set; } = default!;
         [Inject] protected DialogService DialogService { get; set; } = default!;
 
@@ -86,6 +87,23 @@ namespace InvoicingSystem.Client.Pages
             isNewCustomer = false;
             selectedCustomerId = args.Data.CustomerId;
             sidebarExpanded = true;
+        }
+
+        
+        protected async Task OnRowExpand(Customers customer)
+        {
+            // 1. Comprobamos si las facturas ya están cargadas para no machacar la DB a peticiones
+            if (customer.SalesInvoiceHeaders == null || !customer.SalesInvoiceHeaders.Any())
+            {
+                // 2. Llamamos al servicio OData filtrando por el ID de este cliente
+                var result = await SalesInvoiceHeadersService.GetSalesInvoiceHeadersByCustomerId(customer.CustomerId);
+
+                // 3. Si hay datos, los asignamos a la propiedad virtual del modelo
+                if (result != null && result.Value != null)
+                {
+                    customer.SalesInvoiceHeaders = result.Value.ToList();
+                }
+            }
         }
 
         private async Task CloseSidebar(bool reload = false)

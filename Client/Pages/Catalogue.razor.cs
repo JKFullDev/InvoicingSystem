@@ -20,19 +20,26 @@ namespace InvoicingSystem.Client.Pages
         protected override async Task OnInitializedAsync()
         {
             await base.OnInitializedAsync();
+
+            // Me suscribo al evento del carrito para actualizar el badge
             CartService.OnCartChanged += OnCartChangedHandler;
+
+            // Cargo datos y el contador del carrito
             await LoadData();
             await UpdateCartCount();
         }
 
 
+        // Este método se ejecuta cada vez que cambia el carrito
         private async void OnCartChangedHandler()
         {
-            // Obligamos a Blazor a procesar esto en el hilo de la interfaz de usuario (UI)
+            Console.WriteLine("[BADGE] OnCartChangedHandler disparado");
+
+            // Ejecuto en el hilo de la UI para evitar problemas de concurrencia
             await InvokeAsync(async () =>
             {
                 await UpdateCartCount();
-                StateHasChanged(); // Forzamos el repintado
+                StateHasChanged(); // Fuerzo el repintado del componente
             });
         }
 
@@ -65,11 +72,31 @@ namespace InvoicingSystem.Client.Pages
             }
         }
 
+        // Actualizo el contador del carrito
         private async Task UpdateCartCount()
         {
-            var cart = await CartService.GetCartAsync();
-            cartItemCount = cart.TotalItems;
-            StateHasChanged();
+            try
+            {
+                var cart = await CartService.GetCartAsync();
+                var previousCount = cartItemCount;
+                cartItemCount = cart?.TotalItems ?? 0;
+
+                // Log para debugging
+                Console.WriteLine($"[BADGE] UpdateCartCount: {previousCount} → {cartItemCount}");
+
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Error al actualizar contador del carrito: {ex.Message}");
+                cartItemCount = 0;
+            }
+        }
+
+        // Obtengo el texto del badge (solo si hay items)
+        private string? GetBadgeText()
+        {
+            return cartItemCount > 0 ? cartItemCount.ToString() : null;
         }
 
         // Metodo para obtener la imagen del producto (base64, url de internet o ruta local)
@@ -93,9 +120,11 @@ namespace InvoicingSystem.Client.Pages
             return imageUrl.StartsWith("/") ? imageUrl : $"/{imageUrl}";
         }
 
-        // --- Añadir al carrito
+        // Añado producto al carrito
         protected async Task AddToCart(Products product)
         {
+            Console.WriteLine($"[BADGE] Añadiendo producto al carrito: {product.Name}");
+
             await CartService.AddToCartAsync(product);
 
             NotificationService.Notify(new NotificationMessage
@@ -107,18 +136,29 @@ namespace InvoicingSystem.Client.Pages
             });
         }
 
-        // --- Abrir carrito
-        protected void ToggleCartSidebar()
+        // Abro/cierro el carrito
+        protected async Task ToggleCartSidebar()
         {
             isCartOpen = !isCartOpen;
+
+            // Si lo estoy abriendo, actualizo el contador por si acaso
+            if (isCartOpen)
+            {
+                await UpdateCartCount();
+            }
+
             StateHasChanged();
         }
 
 
-        // --- Cerrar carrito
-        protected void CloseCartSidebar()
+        // Cierro el carrito
+        protected async Task CloseCartSidebar()
         {
             isCartOpen = false;
+
+            // Cuando cierro, actualizo el contador (por si se vació desde el checkout)
+            await UpdateCartCount();
+
             StateHasChanged();
         }
 

@@ -57,15 +57,15 @@ namespace InvoicingSystem.Server.Data
                 entity.HasKey(e => e.SalesInvoiceHeaderId);
                 entity.Property(e => e.SalesInvoiceHeaderId).ValueGeneratedNever();
 
-                //Relación con Customers
-                entity.HasOne<Customers>(d => d.Customer)
-                    .WithMany()
+                // Relación con Customers - especifico la navegación inversa
+                entity.HasOne(d => d.Customer)
+                    .WithMany(c => c.SalesInvoiceHeaders)
                     .HasForeignKey(d => d.CustomerId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)  //Si borro un cliente no se borrarán las facturas a su nombre
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Invoices_Customers");
 
                 // Relación con PaymentTerms
-                entity.HasOne<PaymentTerms>(d => d.PaymentTerms)
+                entity.HasOne(d => d.PaymentTerms)
                     .WithMany()
                     .HasForeignKey(d => d.PaymentTermsId)
                     .OnDelete(DeleteBehavior.ClientSetNull)

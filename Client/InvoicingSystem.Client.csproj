@@ -24,6 +24,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Components\CustomerDetailsChart.razor.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="Components\CustomerDetailsChart.razor.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
 	</ItemGroup>
 

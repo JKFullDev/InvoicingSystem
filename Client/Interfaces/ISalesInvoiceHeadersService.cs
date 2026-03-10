@@ -25,5 +25,8 @@ namespace InvoicingSystem.Client.Interfaces
 
         // DELETE (Borrar)
         Task<HttpResponseMessage> DeleteSalesInvoiceHeaders(string salesInvoiceHeaderId);
+
+
+        Task<ODataServiceResult<SalesInvoiceHeaders>?> GetSalesInvoiceHeadersByCustomerId(string customerId);
     }
 }

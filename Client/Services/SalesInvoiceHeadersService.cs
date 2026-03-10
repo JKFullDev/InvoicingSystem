@@ -43,6 +43,27 @@ namespace InvoicingSystem.Client.Services
         }
         #endregion
 
+        #region GET BY CUSTOMER ID
+        public async Task<Radzen.ODataServiceResult<SalesInvoiceHeaders>?> GetSalesInvoiceHeadersByCustomerId(string customerId)
+        {
+            var uri = new Uri(baseUri, "SalesInvoiceHeaders");
+
+            // Construyo la query OData filtrando por el campo CustomerId
+            var filter = $"CustomerId eq '{customerId}'";
+            
+            uri = Radzen.ODataExtensions.GetODataUri(
+                uri: uri,
+                filter: filter,
+                expand: "Lines"
+            );
+
+            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
+            var response = await httpClient.SendAsync(httpRequestMessage);
+
+            return await Radzen.HttpResponseMessageExtensions.ReadAsync<Radzen.ODataServiceResult<SalesInvoiceHeaders>>(response);
+        }
+        #endregion
+
         #region GET BY ID
         // Obtengo una factura por ID con sus líneas expandidas usando OData $expand
         public async Task<SalesInvoiceHeaders?> GetSalesInvoiceHeaderById(string salesInvoiceHeaderId)

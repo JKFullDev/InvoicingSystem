@@ -1,4 +1,5 @@
 @page "/customers"
+@using InvoicingSystem.Client.Components;
 @using InvoicingSystem.Server.Data.Models
 @using Radzen
 @using Radzen.Blazor
@@ -56,8 +57,13 @@
                         PagingSummaryFormat="Mostrando {0}-{1} de {2} clientes"
                         IsLoading="@isLoading"
                         RowDoubleClick="@OnRowDoubleClick"
+                        RowExpand="@OnRowExpand"
                         Style="max-height:397.6px"
                         FilterMode="FilterMode.Advanced">
+
+            <Template Context=currentCustomer>
+               <CustomerDetailsChart CustomerId="@currentCustomer.CustomerId" />
+            </Template>
             <Columns>
                 <RadzenDataGridColumn TItem="Customers" Property="CustomerId" Title="ID Cliente" Width="120px">
                     <Template Context="customer">

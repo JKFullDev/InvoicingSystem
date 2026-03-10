@@ -39,39 +39,40 @@ namespace InvoicingSystem.Client.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            // Inicializo con 5 objetos vacíos para mostrar el skeleton
             salesInvoiceHeaders = new List<SalesInvoiceHeaders> {
                 new SalesInvoiceHeaders {
-                    CustomerId="",
-                    CustomerReference="",
-                    QuoteReference="",
-                    SalesInvoiceHeaderId=""
+                    CustomerId = "",
+                    CustomerReference = "",
+                    QuoteReference = "",
+                    SalesInvoiceHeaderId = ""
                 },
-                 new SalesInvoiceHeaders {
-                    CustomerId="",
-                    CustomerReference="",
-                    QuoteReference="",
-                    SalesInvoiceHeaderId=""
+                new SalesInvoiceHeaders {
+                    CustomerId = "",
+                    CustomerReference = "",
+                    QuoteReference = "",
+                    SalesInvoiceHeaderId = ""
+                },
+                new SalesInvoiceHeaders {
+                    CustomerId = "",
+                    CustomerReference = "",
+                    QuoteReference = "",
+                    SalesInvoiceHeaderId = ""
+                },
+                new SalesInvoiceHeaders {
+                    CustomerId = "",
+                    CustomerReference = "",
+                    QuoteReference = "",
+                    SalesInvoiceHeaderId = ""
+                },
+                new SalesInvoiceHeaders {
+                    CustomerId = "",
+                    CustomerReference = "",
+                    QuoteReference = "",
+                    SalesInvoiceHeaderId = ""
                 }
-                 , new SalesInvoiceHeaders {
-                    CustomerId="",
-                    CustomerReference="",
-                    QuoteReference="",
-                    SalesInvoiceHeaderId=""
-                }
-                 , new SalesInvoiceHeaders {
-                    CustomerId="",
-                    CustomerReference="",
-                    QuoteReference="",
-                    SalesInvoiceHeaderId=""
-                }
-                 , new SalesInvoiceHeaders {
-                    CustomerId="",
-                    CustomerReference="",
-                    QuoteReference="",
-                    SalesInvoiceHeaderId=""
-                 }
             };
-            await InvokeAsync(StateHasChanged);
+            await Task.CompletedTask;
         }
 
         // Después del primer renderizado, cargo los datos reales
@@ -110,13 +111,14 @@ namespace InvoicingSystem.Client.Pages
 
                 if (result != null)
                 {
-                    salesInvoiceHeaders = result.Value;  // Las facturas
+                    salesInvoiceHeaders = result.Value;  // Las facturas reales reemplazan al skeleton
                     count = result.Count;                 // Total en BD
                 }
             }
             finally
             {
                 isLoading = false;  // Desactivo spinner siempre (incluso si hay error)
+                await InvokeAsync(StateHasChanged);  // Fuerzo re-render para que se muestren los datos reales
             }
         }
 

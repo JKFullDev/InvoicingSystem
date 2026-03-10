@@ -33,34 +33,26 @@ namespace InvoicingSystem.Server.Controllers
         }
 
         #region GET(todos)
-        // Listo todas las facturas incluyendo sus líneas
+        // Listo todas las facturas - OData maneja el $expand automáticamente
         [HttpGet]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
-        public IEnumerable<SalesInvoiceHeaders> GetSalesInvoiceHeaders()
+        public IQueryable<SalesInvoiceHeaders> GetSalesInvoiceHeaders()
         {
-            // Incluyo las líneas para que se carguen junto con la factura
-            var items = this.context.SalesInvoiceHeaders
-                .Include(h => h.Lines)
-                .AsNoTracking()
-                .AsQueryable();
-            return items;
+            return this.context.SalesInvoiceHeaders.AsNoTracking();
         }
         #endregion
 
         #region GET(1)
-        // Obtengo una factura por ID incluyendo sus líneas
+        // Obtengo una factura por ID - OData maneja el $expand automáticamente
         [HttpGet("/odata/InvoicingSystem/SalesInvoiceHeaders({key})")]
         [EnableQuery(MaxExpansionDepth = 10, MaxAnyAllExpressionDepth = 10, MaxNodeCount = 1000)]
         public SingleResult<SalesInvoiceHeaders> GetSalesInvoiceHeaders(string key)
         {
-            // Incluyo las líneas para que se carguen con la factura
+            // NO incluyo nada aquí, dejo que OData maneje el $expand
             var items = this.context.SalesInvoiceHeaders
-                .Include(h => h.Lines)
                 .AsNoTracking()
                 .Where(i => i.SalesInvoiceHeaderId == key);
-            var result = SingleResult.Create(items);
-
-            return result;
+            return SingleResult.Create(items);
         }
         #endregion
 

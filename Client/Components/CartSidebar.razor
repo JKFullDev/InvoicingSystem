@@ -2,6 +2,9 @@
 @using Radzen
 @using Radzen.Blazor
 
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+
 @if (IsOpen)
 {
     <div class="sidebar-overlay" @onclick="Close" style="height:100%"></div>

@@ -17,6 +17,11 @@ builder.Services.AddDbContext<InvoicingSystemDbContext>(options =>
 
 // 2. CONFIGURAR ODATA (Faltaba toda esta parte para que las rutas /odata funcionen)
 builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Ignoro referencias circulares para evitar errores de serialización
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    })
     .AddOData(options => options
         .Select().Filter().OrderBy().Expand().Count().SetMaxTop(null)
         .AddRouteComponents("odata/InvoicingSystem", GetEdmModel()));
@@ -29,6 +34,7 @@ builder.Services.AddScoped<IProductsService, ProductsService>();
 builder.Services.AddScoped<ITaxRatesService, TaxRatesService>();
 builder.Services.AddScoped<ISalesInvoiceLinesService, SalesInvoiceLinesService>();
 builder.Services.AddScoped<ISalesInvoiceHeadersService, SalesInvoiceHeadersService>();
+builder.Services.AddScoped<ICartService, CartService>(); // Para evitar error de prerendering
 builder.Services.AddSingleton<SidebarStateService>();  // Servicio para controlar el sidebar principal
 builder.Services.AddRadzenComponents();
 builder.Services.AddRadzenCookieThemeService(options =>
@@ -68,13 +74,26 @@ app.Run();
 static IEdmModel GetEdmModel()
 {
     var builder = new ODataConventionModelBuilder();
-    // Este nombre "Customers" debe coincidir con el del Controller
+
+    // Configuración de EntitySets
     builder.EntitySet<Customers>("Customers");
     builder.EntitySet<PaymentTerms>("PaymentTerms");
     builder.EntitySet<Products>("Products");
     builder.EntitySet<TaxRates>("TaxRates");
     builder.EntitySet<SalesInvoiceLines>("SalesInvoiceLines");
     builder.EntitySet<SalesInvoiceHeaders>("SalesInvoiceHeaders");
-    // Añade aquí el resto de tablas cuando crees sus controllers (Products, etc.)
+
+    // Configuración de navegaciones para evitar auto-expand
+    var salesInvoiceHeaders = builder.EntityType<SalesInvoiceHeaders>();
+
+    // Las navegaciones inversas NO deben auto-expandirse
+    salesInvoiceHeaders.HasMany(h => h.Lines).AutoExpand = false;
+    salesInvoiceHeaders.HasOptional(h => h.Customer).AutoExpand = false;
+    salesInvoiceHeaders.HasOptional(h => h.PaymentTerms).AutoExpand = false;
+
+    var salesInvoiceLines = builder.EntityType<SalesInvoiceLines>();
+    salesInvoiceLines.HasOptional(l => l.Product).AutoExpand = false;
+    salesInvoiceLines.HasOptional(l => l.TaxRate).AutoExpand = false;
+
     return builder.GetEdmModel();
 }

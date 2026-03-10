@@ -1,6 +1,7 @@
 @using InvoicingSystem.Server.Data.Models
 @using Radzen
 @using Radzen.Blazor
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
 <RadzenStack Gap="1rem">
     <RadzenText TextStyle="TextStyle.Body1">Seleccione el cliente para la factura:</RadzenText>

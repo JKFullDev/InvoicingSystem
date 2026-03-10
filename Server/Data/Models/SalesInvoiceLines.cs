@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace InvoicingSystem.Server.Data.Models
 {
@@ -10,7 +11,8 @@ namespace InvoicingSystem.Server.Data.Models
         [Required]
         public required string SalesInvoiceHeaderId { get; set; }
 
-        // Quito required para evitar problemas de deserialización
+        // Navegación inversa - NO se serializa para evitar ciclos
+        [JsonIgnore]
         public SalesInvoiceHeaders? SalesInvoiceHeader { get; set; }
 
         // Nullable para floating labels - Validación en cliente con RadzenRequiredValidator
