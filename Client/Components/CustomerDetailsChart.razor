@@ -1,1 +1,38 @@
-﻿
+﻿@using InvoicingSystem.Server.Data.Models
+@inject IJSRuntime JSRuntime
+
+@if (Invoices == null || !Invoices.Any())
+{
+    <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" Variant="Variant.Flat">
+        Este cliente no tiene facturas.
+    </RadzenAlert>
+}
+else
+{
+    <div style="height: 300px; width: 100%;">
+        <canvas id="@CanvasId"></canvas>
+    </div>
+}
+
+@code {
+    [Parameter] public string CustomerId { get; set; } = default!;
+    [Parameter] public List<SalesInvoiceHeaders>? Invoices { get; set; }
+
+    private string CanvasId => $"chart-{CustomerId}";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // OnAfterRenderAsync asegura que el <canvas> ya existe en el HTML
+        if (firstRender && Invoices != null && Invoices.Any())
+        {
+            // Extraemos los arrays que Chart.js necesita
+            var facturasOrdenadas = Invoices.OrderBy(f => f.InvoiceDate).ToList();
+
+            var fechas = facturasOrdenadas.Select(f => f.InvoiceDate.ToString("dd/MM/yyyy")).ToArray();
+            var totales = facturasOrdenadas.Select(f => f.TotalAmount).ToArray();
+
+            // Llamamos a la función de JS
+            await JSRuntime.InvokeVoidAsync("renderCustomerChart", CanvasId, fechas, totales);
+        }
+    }
+}

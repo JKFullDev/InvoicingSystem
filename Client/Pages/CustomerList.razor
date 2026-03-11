@@ -3,6 +3,7 @@
 @using InvoicingSystem.Server.Data.Models
 @using Radzen
 @using Radzen.Blazor
+@using System.Linq
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
 <PageTitle>Listado de Clientes</PageTitle>
@@ -62,7 +63,8 @@
                         FilterMode="FilterMode.Advanced">
 
             <Template Context=currentCustomer>
-               <CustomerDetailsChart CustomerId="@currentCustomer.CustomerId" />
+                <CustomerDetailsChart CustomerId="@currentCustomer.CustomerId"
+                                      Invoices="@(currentCustomer.SalesInvoiceHeaders?.ToList() ?? new List<SalesInvoiceHeaders>())" />
             </Template>
             <Columns>
                 <RadzenDataGridColumn TItem="Customers" Property="CustomerId" Title="ID Cliente" Width="120px">

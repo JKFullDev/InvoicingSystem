@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema; 
+using System.Linq;
 
 namespace InvoicingSystem.Server.Data.Models
 {
@@ -33,5 +35,8 @@ namespace InvoicingSystem.Server.Data.Models
 
         // Relación 1-a-N con las líneas
         public List<SalesInvoiceLines> Lines { get; set; } = new();
+
+        [NotMapped]
+        public decimal TotalAmount => Lines != null ? Lines.Sum(l => l.TotalLine) : 0m;
     }
 }
